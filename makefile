@@ -1,7 +1,9 @@
 CC = gcc
 BIN = projC
 SRC = ./main.c \
-	  ./database.c
+	  ./functions/database.c \
+	  ./functions/manageGtk.c \
+	  ./functions/shows.c
 OBJ = $(SRC:.c=.o)
 
 ERROR_CFLAGS = -Wall -Werror -Wextra
@@ -16,13 +18,19 @@ LDFLAGS +=  $(GTK_LDFLAGS) $(MYSQL_LDFLAGS) -I./
 
 all: $(BIN)
 
-$(BIN): database.o main.o
+$(BIN): database.o main.o manageGtk.o shows.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 #
 #$(OBJ): $(SRC)
 #	$(CC) $(CFLAGS) -o $@ -c $<
 
-database.o: database.c
+database.o: ./functions/database.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+manageGtk.o : ./functions/manageGtk.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+shows.o : ./functions/shows.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 main.o: main.c
@@ -30,6 +38,9 @@ main.o: main.c
 
 clean: 
 	rm -f $(OBJ)
+
+run: fclean all
+	./$(BIN)
 
 fclean: clean
 	rm -f $(NAME)

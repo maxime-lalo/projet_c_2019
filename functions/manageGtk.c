@@ -11,14 +11,13 @@ char * getEntryText(GtkWidget * entry){
     char * txt = (char *) gtk_entry_buffer_get_text(buffer);
 }
 
-void verifyConnect(GtkWidget * button,GtkWidget * window){
-
+void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
+    gtk_widget_hide(loginWindow);
 }
 
 GtkWidget * getLoginPage(){
     GtkWidget * loginWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkWidget * mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
-
     GtkWidget * inputUsername = gtk_entry_new();
     GtkWidget * inputPassword = gtk_entry_new();
     GtkWidget * buttonSubmit = gtk_button_new();

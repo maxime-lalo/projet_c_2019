@@ -1,14 +1,18 @@
 #include <gtk/gtk.h>
+#include <sys/stat.h>
 #include "database.h"
 #include "functions.h"
 
 int isConnected(){
     const char * LOGIN_FILE = "./fms/user.bin";
-    if (verifyLoginFile(LOGIN_FILE) == 1)
+    FILE * file = fopen(LOGIN_FILE, "rb");
+    if (file != NULL)
     {
-        return 1;
+        if (verifyLoginFile(LOGIN_FILE) == 1)
+        {
+            return 1;
+        }
     }
-
     return 0;
 }
 

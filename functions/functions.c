@@ -8,7 +8,7 @@
 #include "database.h"
 #include "functions.h"
 
-uint8_t verifyLogins(const char *username,const char *password)
+uint8_t verifyLogins(const char *username, const char *password)
 {
     char request[298];
     strcpy(request, "SELECT password FROM user WHERE email = \"");
@@ -34,47 +34,71 @@ uint8_t verifyLogins(const char *username,const char *password)
     }
 }
 
-uint8_t verifyLoginFile(const char *loginFile)
+uint8_t loginFileInvert(const char *loginFile)
 {
+    
     FILE *file = fopen(loginFile, "r+b");
     if (file != NULL)
     {
-        char username[256];
-        char password[256];
-        fread(username,256,1,file);
-        fread(password,256,1,file);
-        if(verifyLogins(username, password)){
-            return 1;
+        uint64_t dataString[64] = {0};
+        fread(dataString, 8, 64, file);
+        for (uint8_t i = 0; i < 64; i++)
+        {
+            dataString[i] = ~dataString[i];
         }
-    }else
-    {
-        return 2;
-        
-    }
-}
-
-uint8_t createLoginFile(const char *loginFile, const char * username, char * password){
-    FILE *file = fopen(loginFile, "wb");
-    if (file != NULL)
-    {
-        char username_[256] = "";
-        char password_[256] = "";
-        strcpy(username_, username);
-        strcpy(password_, password); 
-        fwrite(username_, 256, 1, file);
-        fwrite(password_, 256, 1, file);
+        fseek(file, 0, SEEK_SET);
+        fwrite(dataString, 8, 64, file);
         fclose(file);
         return 1;
     }
     exit(EXIT_FAILURE);
 }
 
-uint8_t appDirectoryCheck(const char * appFolder)
+uint8_t verifyLoginFile(const char *loginFile)
+{
+    loginFileInvert(loginFile);
+    FILE *file = fopen(loginFile, "rb");
+    if (file != NULL)
+    {
+        char username[256];
+        char password[256];
+        fread(username, 256, 1, file);
+        fread(password, 256, 1, file);
+        if (verifyLogins(username, password))
+        {
+            return 1;
+        }
+    }
+    else
+    {
+        return 2;
+    }
+}
+
+uint8_t createLoginFile(const char *loginFile, const char *username, char *password)
+{
+    FILE *file = fopen(loginFile, "wb");
+    if (file != NULL)
+    {
+        char username_[256] = "";
+        char password_[256] = "";
+        strcpy(username_, username);
+        strcpy(password_, password);
+        fwrite(username_, 256, 1, file);
+        fwrite(password_, 256, 1, file);
+        fclose(file);
+        loginFileInvert(loginFile);
+        return 1;
+    }
+    exit(EXIT_FAILURE);
+}
+
+uint8_t appDirectoryCheck(const char *appFolder)
 {
     struct stat st = {0};
     if (stat(appFolder, &st) == -1)
     {
-        if (mkdir(appFolder, 0700)!= 0)
+        if (mkdir(appFolder, 0700) != 0)
         {
             exit(EXIT_FAILURE);
         }

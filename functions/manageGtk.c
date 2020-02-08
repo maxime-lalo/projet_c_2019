@@ -3,7 +3,12 @@
 #include "functions.h"
 
 int isConnected(){
-    // Vérifier si l'utilisateur est connecté
+    const char * LOGIN_FILE = "./fms/user.bin";
+    if (verifyLoginFile(LOGIN_FILE) == 1)
+    {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -13,6 +18,7 @@ char * getEntryText(GtkWidget * entry){
 }
 
 void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
+    const char * LOGIN_FILE = "./fms/user.bin";
     char * username;
     char * password;
     // On récupère les enfants de la Window, donc uniquement le container
@@ -40,7 +46,8 @@ void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
     }
 
     if(verifyLogins(username,password)){
-        // Création du fichier login
+        // Création du fichier username
+        createLoginFile(LOGIN_FILE, username, password);
         // Lancer la fenêtre principale
         gtk_widget_destroy(loginWindow);
     }else{

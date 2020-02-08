@@ -6,10 +6,9 @@
 #include "./functions/shows.h"
 #include "./functions/functions.h"
 
-const char * APP_FOLDER = "./fms";
-const char * LOGIN_FILE = "./fms/user.bin";
-
 int main(int argc,char **argv){
+    const char * APP_FOLDER = "./fms";
+    
     MYSQL *conn = initBdd();
     gtk_init(&argc,&argv);
     

@@ -4,8 +4,8 @@
 MYSQL * initBdd(){
     MYSQL * conn;
 	char * server = "localhost";
-	char * user = "max";
-	char * password = "root";
+	char * user = "peter";
+	char * password = "Peter!945914@";
 	char * database = "projet_c";
 	
 	conn = mysql_init(NULL);

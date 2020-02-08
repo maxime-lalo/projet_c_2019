@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 MYSQL * initBdd();
-MYSQL_ROW fetch(char * request, MYSQL * conn);
-char * fetchColumn(char * request, MYSQL * conn);
+MYSQL_ROW fetch(char * request);
+char * fetchColumn(char * request);
 
 #endif // __database_hls

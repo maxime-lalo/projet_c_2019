@@ -18,7 +18,8 @@ MYSQL * initBdd(){
    return conn;
 }
 
-MYSQL_ROW fetch(char * request,MYSQL * conn){
+MYSQL_ROW fetch(char * request){
+	MYSQL * conn = initBdd();
     MYSQL_RES * res;
 	MYSQL_ROW row;
 	if (mysql_query(conn, request)) {
@@ -27,11 +28,24 @@ MYSQL_ROW fetch(char * request,MYSQL * conn){
 	}
    
 	res = mysql_use_result(conn);
+	if (res == NULL)
+	{
+		return NULL;
+	}
+	
     row = mysql_fetch_row(res);
+	if(row == NULL){
+		return NULL;
+	}
     return row;
 }  
 
-char * fetchColumn(char * request,MYSQL * conn){
-    MYSQL_ROW row = fetch(request,conn);
-    return row[0];
+char * fetchColumn(char * request){
+    MYSQL_ROW row = fetch(request);
+	if (row != NULL){
+		return row[0];
+	}else{
+		return NULL;
+	}
+    
 }   

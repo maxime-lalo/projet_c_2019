@@ -4,6 +4,7 @@
 #include "./functions/database.h"
 #include "./functions/manageGtk.h"
 #include "./functions/shows.h"
+#include "./functions/functions.h"
 
 int main(int argc,char **argv){
     MYSQL *conn = initBdd();

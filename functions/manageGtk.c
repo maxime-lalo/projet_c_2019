@@ -2,11 +2,6 @@
 #include "database.h"
 #include "functions.h"
 
-int isConnected(){
-    // Vérifier si l'utilisateur est connecté
-    return 0;
-}
-
 char * getEntryText(GtkWidget * entry){
     GtkEntryBuffer * buffer = gtk_entry_get_buffer(GTK_ENTRY(entry));
     char * txt = (char *) gtk_entry_buffer_get_text(buffer);
@@ -43,8 +38,7 @@ void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
         // Lancer la fenêtre principale
         gtk_widget_destroy(loginWindow);
     }else{
-        // Lancer la fenêtre d'erreur
-        printf("\n Username ou mot de passe incorrect\n");
+        errorWindow("Email ou mot de passe incorrect");
     }
 }
 
@@ -76,4 +70,27 @@ GtkWidget * getLoginPage(){
 
 GtkWidget * getMainPage(){
     
+}
+
+void errorWindow(char * errorMessage){
+    GtkWidget * errorWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    GtkWidget * mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
+    GtkWidget * buttonOk = gtk_button_new();
+    gtk_button_set_label(GTK_BUTTON(buttonOk),"Fermer");
+    g_signal_connect(G_OBJECT(buttonOk),"clicked",G_CALLBACK(closeWindow),errorWindow);
+
+    gtk_window_set_title(GTK_WINDOW(errorWindow), "Erreur");
+    gtk_window_set_default_size(GTK_WINDOW(errorWindow), 260, 40);
+	gtk_window_set_position (GTK_WINDOW (errorWindow), GTK_WIN_POS_CENTER);
+	g_signal_connect(G_OBJECT(errorWindow), "destroy", G_CALLBACK(closeWindow), errorWindow);
+
+    gtk_container_add(GTK_CONTAINER(mainContainer),gtk_label_new(errorMessage));
+    gtk_container_add(GTK_CONTAINER(mainContainer),buttonOk);
+
+    gtk_container_add(GTK_CONTAINER(errorWindow),mainContainer);
+    gtk_widget_show_all(GTK_WIDGET(errorWindow));
+}
+
+void closeWindow(GtkWidget * widget,GtkWidget * window){
+    gtk_widget_destroy(window);
 }

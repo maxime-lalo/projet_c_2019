@@ -16,9 +16,21 @@ int isConnected(){
     return 0;
 }
 
+
+
 char * getEntryText(GtkWidget * entry){
     GtkEntryBuffer * buffer = gtk_entry_get_buffer(GTK_ENTRY(entry));
     char * txt = (char *) gtk_entry_buffer_get_text(buffer);
+}
+
+GtkWidget * getMainPage(user ** user){
+    GtkWidget * loginWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
+    gtk_window_set_default_size(GTK_WINDOW(loginWindow), 700, 400);
+    gtk_window_set_title(GTK_WINDOW(loginWindow), "Connexion");
+	gtk_window_set_position (GTK_WINDOW (loginWindow), GTK_WIN_POS_CENTER);
+	g_signal_connect(G_OBJECT(loginWindow), "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    return loginWindow;
 }
 
 void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
@@ -52,8 +64,11 @@ void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
     if(verifyLogins(username,password)){
         // Création du fichier username
         createLoginFile(LOGIN_FILE, username, password);
-        // Lancer la fenêtre principale
+        // Destruction de la fenêtre de Login
         gtk_widget_destroy(loginWindow);
+        // Lancer la fenêtre principale
+        user *user = createUserStruct(username, password);
+        gtk_widget_show_all(getMainPage(&user));
     }else{
         // Lancer la fenêtre d'erreur
         printf("\n Username ou mot de passe incorrect\n");
@@ -84,8 +99,4 @@ GtkWidget * getLoginPage(){
 
     gtk_container_add(GTK_CONTAINER(loginWindow),mainContainer);
     return loginWindow;
-}
-
-GtkWidget * getMainPage(){
-    
 }

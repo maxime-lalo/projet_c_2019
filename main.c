@@ -8,15 +8,25 @@
 
 int main(int argc,char **argv){
     const char * APP_FOLDER = "./fms";
+    const char * LOGIN_FILE = "./fms/user.bin";
     
     MYSQL *conn = initBdd();
     gtk_init(&argc,&argv);
-    
     GtkWidget * window;
-
+    
     appDirectoryCheck(APP_FOLDER);
 
-    window = isConnected()?getMainPage():getLoginPage();
+    if (isConnected())
+    {
+        printf("testMain");
+        char ** userCreds = getUserCred(LOGIN_FILE);
+        
+        user * user = createUserStruct(userCreds[0], userCreds[1]);
+        window = getMainPage(&user);
+    }else
+    {
+        window = getLoginPage();
+    }
 
     gtk_widget_show_all(window);
 

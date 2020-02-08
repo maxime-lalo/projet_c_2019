@@ -8,12 +8,28 @@
 #include "database.h"
 #include "functions.h"
 
+user * createUserStruct(const char * username,const char * password){
+    char request[294];
+    user * user = malloc(sizeof(user));
+    MYSQL *conn = initBdd();
+    strcat(strcat(strcpy(request, "SELECT name FROM user WHERE email = \""), username), "\"");
+    strcpy(user->name, fetchColumn(request));
+    strcat(strcat(strcpy(request, "SELECT id FROM user WHERE email = \""), username), "\"");
+    user->id = atoi(fetchColumn(request));
+    strcpy(user->email, username);
+    strcpy(user->password, password);
+    return user;
+}
+
 uint8_t verifyLogins(const char *username, const char *password)
 {
     char request[298];
+
+    
     strcpy(request, "SELECT password FROM user WHERE email = \"");
     strcat(request, username);
     strcat(request, "\"");
+
 
     MYSQL *conn = initBdd();
     char *passwordFetch = fetchColumn(request);
@@ -66,11 +82,13 @@ uint8_t verifyLoginFile(const char *loginFile)
         fread(password, 256, 1, file);
         if (verifyLogins(username, password))
         {
+            loginFileInvert(loginFile);
             return 1;
         }
     }
     else
     {
+        loginFileInvert(loginFile);
         return 2;
     }
 }
@@ -91,6 +109,25 @@ uint8_t createLoginFile(const char *loginFile, const char *username, char *passw
         return 1;
     }
     exit(EXIT_FAILURE);
+}
+
+char ** getUserCred(const char * loginFile){
+    loginFileInvert(loginFile);
+    FILE *file = fopen(loginFile, "rb");
+    char ** userCred;
+    userCred = malloc(sizeof(char *) * 2);
+    for (uint8_t i = 0; i < 2; i++)
+    {
+        userCred[i] = malloc(sizeof(char) * 256);
+    }
+    
+    if (file != NULL)
+    {
+        fread(userCred[0], 256, 1, file);
+        fread(userCred[1], 256, 1, file);
+    }
+    loginFileInvert(loginFile);
+    return userCred;
 }
 
 uint8_t appDirectoryCheck(const char *appFolder)

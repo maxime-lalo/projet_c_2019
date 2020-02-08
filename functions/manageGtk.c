@@ -40,6 +40,7 @@ void verifyConnect(GtkWidget * button,GtkWidget * loginWindow){
     }
 
     if(verifyLogins(username,password)){
+        // Création du fichier login
         // Lancer la fenêtre principale
         gtk_widget_destroy(loginWindow);
     }else{

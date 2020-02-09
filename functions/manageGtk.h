@@ -4,5 +4,5 @@
 int isConnected();
 char * getEntryText(GtkWidget * entry);
 GtkWidget * getLoginPage();
-GtkWidget * getMainPage(user ** user);
+GtkWidget * getMainPage();
 void verifyConnect(GtkWidget * button,GtkWidget * window);

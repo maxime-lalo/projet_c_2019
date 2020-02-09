@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "shows.h"
 
-user * createUserStruct(const char * username,const char * password);
+user createUserStruct(const char * username,const char * password);
 uint8_t verifyLogins(const char * username, const char * password);
 uint8_t loginFileInvert(const char *loginFile);
 uint8_t verifyLoginFile(const char * loginFile);

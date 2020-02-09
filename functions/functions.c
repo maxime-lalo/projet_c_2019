@@ -8,16 +8,15 @@
 #include "database.h"
 #include "functions.h"
 
-user * createUserStruct(const char * username,const char * password){
+user createUserStruct(const char * username,const char * password){
     char request[294];
-    user * user = malloc(sizeof(user));
-    MYSQL *conn = initBdd();
+    user user = {0, "", "", ""};
     strcat(strcat(strcpy(request, "SELECT name FROM user WHERE email = \""), username), "\"");
-    strcpy(user->name, fetchColumn(request));
+    strcpy(user.name, fetchColumn(request));
     strcat(strcat(strcpy(request, "SELECT id FROM user WHERE email = \""), username), "\"");
-    user->id = atoi(fetchColumn(request));
-    strcpy(user->email, username);
-    strcpy(user->password, password);
+    user.id = atoi(fetchColumn(request));
+    strcpy(user.email, username);
+    strcpy(user.password, password);
     return user;
 }
 
@@ -115,17 +114,21 @@ char ** getUserCred(const char * loginFile){
     loginFileInvert(loginFile);
     FILE *file = fopen(loginFile, "rb");
     char ** userCred;
-    userCred = malloc(sizeof(char *) * 2);
-    for (uint8_t i = 0; i < 2; i++)
-    {
-        userCred[i] = malloc(sizeof(char) * 256);
-    }
-    
+
     if (file != NULL)
     {
+        userCred = malloc(sizeof(char *) * 2);
+        for (uint8_t i = 0; i < 2; i++)
+        {
+            userCred[i] = malloc(sizeof(char) * 256);
+        }
         fread(userCred[0], 256, 1, file);
         fread(userCred[1], 256, 1, file);
+    }else
+    {
+        exit(EXIT_FAILURE);
     }
+    
     loginFileInvert(loginFile);
     return userCred;
 }

@@ -6,9 +6,9 @@
 
 typedef struct user{
     int id;
-    char * name;
-    char * password;
-    char * email;
+    char name[255];
+    char password[255];
+    char email[255];
 }user;
 
 

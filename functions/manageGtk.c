@@ -30,57 +30,82 @@ GtkWidget *getMainPage()
     user user = createUserStruct(userCred[0], userCred[1]);
     free(userCred);
 
+    //Window principale + Box princiale (dans Window)
     GtkWidget *mainWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    GtkWidget *subContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
+    //Stack + Stack Switcher (permet de Switch entre les childs de Stack)
     GtkWidget *stack = gtk_stack_new();
+    GtkStackSwitcher *switcher = GTK_STACK_SWITCHER(gtk_stack_switcher_new());
+
+    //Agenda
+    GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
+    GtkWidget *agendaFlowBox = gtk_flow_box_new();
 
     //Series
     GtkWidget *seriesWindow = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_placement (GTK_SCROLLED_WINDOW(seriesWindow), GTK_CORNER_TOP_RIGHT);
-    GtkWidget *seriesGrid = gtk_grid_new();
+    GtkWidget *seriesFlowBox = gtk_flow_box_new();
+    gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX(seriesFlowBox), 9);
+
+    //Toutes Series + Recherche
+    GtkWidget *allSeriesWindow = gtk_scrolled_window_new(NULL, NULL);
+    GtkWidget *allSeriesFlowBox = gtk_flow_box_new();
+    gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX(allSeriesFlowBox), 6);
+
+    //Boutons
+    GtkWidget *series[100];
 
     //Images pour les boutons représentants chacun une série
-    GtkWidget *image = gtk_image_new();
+    GtkWidget *image[100];
 
-    //Bouton qui switch le stack vers seriesWindow
-    GtkWidget *buttonSeries = gtk_button_new();
-    gtk_button_set_label(GTK_BUTTON(buttonSeries), "Series");
-    //g_signal_connect(G_OBJECT(buttonSubmit), "clicked", G_CALLBACK(verifyConnect), loginWindow);
+    //Labels tests
+    GtkWidget *label1 = gtk_label_new("Agenda :");
+    gtk_flow_box_insert (GTK_FLOW_BOX(agendaFlowBox), label1, -1);
+    GtkWidget *label2 = gtk_label_new("Toutes les series");
+    gtk_flow_box_insert (GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
+    
+    //Créations des 100 images et 100 boutons (tests)
+    for (uint8_t i = 0; i < 100; i++)
+    {
+        //Création image
+        image[i] = gtk_image_new();
+        gtk_image_set_from_file(GTK_IMAGE(image[i]), "./fms/images/image.jpg");
+        gtk_widget_show(image[i]);
 
-    //Bouton qui switch le stack vers profileWindow
-    GtkWidget *buttonProfile = gtk_button_new();
-    gtk_button_set_label(GTK_BUTTON(buttonProfile), "Profile");
-    //g_signal_connect(G_OBJECT(buttonSubmit), "clicked", G_CALLBACK(verifyConnect), loginWindow);
+        //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
+        series[i] = gtk_button_new();
+        gtk_button_set_relief(GTK_BUTTON(series[i]), GTK_RELIEF_NONE);
+        gtk_button_set_image(GTK_BUTTON(series[i]), GTK_WIDGET(image[i]));
+        gtk_flow_box_insert (GTK_FLOW_BOX(seriesFlowBox), series[i], -1);
+    }
 
-    //Affichage d'une série (test) dans seriesGrid
-    gtk_image_set_from_file(GTK_IMAGE(image), "./fms/images/friends.jpg");
-    GtkWidget *series = gtk_button_new();
-    gtk_button_set_image(GTK_BUTTON(series), image);
-    gtk_widget_show (image);
-    gtk_grid_set_column_homogeneous (GTK_GRID(seriesGrid), 40);
-    gtk_grid_insert_column (GTK_GRID(seriesGrid), 0);
-    gtk_grid_insert_row (GTK_GRID(seriesGrid), 0);
-    gtk_grid_attach (GTK_GRID(seriesGrid), series, 0, 0, 1, 1);
+    //Ajout des FlowBox dans leurs Window respectives
+    gtk_container_add(GTK_CONTAINER(seriesWindow), seriesFlowBox);
+    gtk_container_add(GTK_CONTAINER(allSeriesWindow), allSeriesFlowBox);
+    gtk_container_add(GTK_CONTAINER(agendaWindow), agendaFlowBox);
 
-    //Ajout de seriesGrid dans seriesWindow
-    gtk_container_add(GTK_CONTAINER(seriesWindow), seriesGrid);
+    //Ajout/Création de boutons pour les différents stacks
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "Séries");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(agendaWindow), "agenda", "Agenda");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Suggestions");
 
-    //Ajout seriesWindow dans stack avec identifiant "series"
-    gtk_stack_add_named(GTK_STACK(stack), seriesWindow, "series");
-    //gtk_stack_set_visible_child_name (GTK_STACK(stack), "series");
-    //Création de
+    //Alignements des boutons Stack Switcher
+    gtk_widget_set_halign(GTK_WIDGET(switcher), GTK_ALIGN_CENTER);
+
+    //Ajout de la struct Stack au Stack Switcher
+    gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
+
+    //Configuration de base de la Window principale
     gtk_window_set_default_size(GTK_WINDOW(mainWindow), 700, 400);
     gtk_window_set_title(GTK_WINDOW(mainWindow), user.name);
     gtk_window_set_position(GTK_WINDOW(mainWindow), GTK_WIN_POS_CENTER);
     g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    gtk_box_pack_start(GTK_BOX(subContainer), buttonSeries, FALSE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(subContainer), buttonProfile, FALSE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(mainContainer), subContainer, FALSE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX(mainContainer), stack, FALSE, TRUE, 0);
+    //Ajout du Stack Switcher et Stack au mainContainer
+    gtk_box_pack_start(GTK_BOX(mainContainer), GTK_WIDGET(switcher), FALSE, FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(mainContainer), stack, TRUE, TRUE, 0);
 
+    //Ajout du mainContainer à la mainWindow
     gtk_container_add(GTK_CONTAINER(mainWindow), mainContainer);
     return mainWindow;
 }
@@ -125,7 +150,7 @@ void verifyConnect(GtkWidget *button, GtkWidget *loginWindow)
         // Création du fichier username
         createLoginFile(LOGIN_FILE, username, password);
         // Destruction de la fenêtre de Login
-        gtk_widget_destroy(loginWindow);
+        gtk_widget_hide_on_delete(loginWindow);
         // Lancer la fenêtre principale
         gtk_widget_show_all(getMainPage());
     }

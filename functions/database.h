@@ -13,7 +13,9 @@ typedef struct episode
     int number;
     char name[256];
     char shortDescription[1000];
-    char airDate[11];
+    int airDay;
+    int airMonth;
+    int airYear;
     int duration;
     struct episode *next;
 } episode;

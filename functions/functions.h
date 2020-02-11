@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "shows.h"
 genre *getSerieGenresList(int idSerie);
+season *getSeasonEpisodesList(int seasonNum);
+seasonNodes *getSerieSeasonsList(int idSerie);
 seriesNode *getUserSeriesList(int idUser);
 void addUserSeries(user *user);
 user createUserStruct(const char * username,const char * password);

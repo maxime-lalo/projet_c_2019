@@ -3,10 +3,10 @@
 
 MYSQL * initBdd(){
     MYSQL * conn;
-	char * server = "localhost";
-	char * user = "peter";
-	char * password = "Peter!945914@";
-	char * database = "projet_c";
+	const char * server = "localhost";
+	const char * user = "peter";
+	const char * password = "Peter!945914@";
+	const char * database = "projet_c";
 	
 	conn = mysql_init(NULL);
 	
@@ -18,7 +18,7 @@ MYSQL * initBdd(){
    return conn;
 }
 
-MYSQL_ROW fetch(char * request){
+MYSQL_ROW  fetchRow(char * request){
 	MYSQL * conn = initBdd();
     MYSQL_RES * res;
 	MYSQL_ROW row;
@@ -40,8 +40,17 @@ MYSQL_ROW fetch(char * request){
     return row;
 }  
 
+void fetchAllRows(char * request, MYSQL_RES ** res){
+	MYSQL * conn = initBdd();
+	if (mysql_query(conn, request)) {
+		fprintf(stderr, "%s\n", mysql_error(conn));
+		exit(1);
+	}
+	*res = mysql_use_result(conn);
+} 
+
 char * fetchColumn(char * request){
-    MYSQL_ROW row = fetch(request);
+    MYSQL_ROW row = fetchRow(request);
 	if (row != NULL){
 		return row[0];
 	}else{

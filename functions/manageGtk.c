@@ -28,6 +28,7 @@ GtkWidget *getMainPage()
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
+    addUserSeries(&user);
     free(userCred);
 
     //Window principale + Box princiale (dans Window)

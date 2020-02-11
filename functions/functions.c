@@ -12,7 +12,6 @@ genre *getSerieGenresList(int idSerie)
 {
     char request[294];
     char idSerieString[5];
-    char idGenreString[5];
     MYSQL_ROW rowGenres;
     MYSQL_ROW rowGenre;
     MYSQL_RES *resultSerieGenres;
@@ -26,8 +25,7 @@ genre *getSerieGenresList(int idSerie)
 
     while ((rowGenres = mysql_fetch_row(resultSerieGenres)) != NULL)
     {
-        sprintf(idGenreString, "%d", rowGenres[0]);
-        strcat(strcat(strcpy(request, "SELECT * FROM genre WHERE id = \""), idGenreString), "\"");
+        strcat(strcat(strcpy(request, "SELECT * FROM genre WHERE id = \""), rowGenres[0]), "\"");
         fetchAllRows(request, &resultGenre);
 
         while ((rowGenre = mysql_fetch_row(resultGenre)) != NULL)
@@ -44,7 +42,7 @@ genre *getSerieGenresList(int idSerie)
 
 
 
-seasonNodes *getSerieSeasonsList(idSerie)
+seasonNodes *getSerieSeasonsList(int idSerie)
 {
     uint8_t seasonNum = 1;
     char request[294];
@@ -85,7 +83,6 @@ seriesNode *getUserSeriesList(int idUser)
 {
     char request[294];
     char idUserString[5];
-    char idSerieString[5];
     MYSQL_ROW rowSeries;
     MYSQL_ROW rowSerie;
     MYSQL_RES *resultUserSeries;
@@ -98,8 +95,7 @@ seriesNode *getUserSeriesList(int idUser)
     fetchAllRows(request, &resultUserSeries);
     while ((rowSeries = mysql_fetch_row(resultUserSeries)) != NULL)
     {
-        sprintf(idSerieString, "%d", rowSeries[0]);
-        strcat(strcat(strcpy(request, "SELECT * FROM serie WHERE id = \""), idSerieString), "\"");
+        strcat(strcat(strcpy(request, "SELECT * FROM serie WHERE id = \""), rowSeries[0]), "\"");
         fetchAllRows(request, &resultSerie);
         while ((rowSerie = mysql_fetch_row(resultSerie)) != NULL)
         {
@@ -108,8 +104,9 @@ seriesNode *getUserSeriesList(int idUser)
             serieInter->id = atoi(rowSerie[0]);
             strcpy(serieInter->name, rowSerie[1]);
             strcpy(serieInter->imageLink, rowSerie[2]);
-            strcpy(serieInter->state, rowSerie[3]);
+            serieInter->state = atoi(rowSerie[3]);
             serieInter->genre = getSerieGenresList(serieInter->id);
+            //
             nodeInter->serie = serieInter;
             nodeInter->next = nodeStart;
             nodeStart->next = nodeInter;

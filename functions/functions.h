@@ -3,7 +3,9 @@
 #include <mysql.h>
 #include <stdint.h>
 #include "shows.h"
-
+genre *getSerieGenresList(int idSerie);
+seriesNode *getUserSeriesList(int idUser);
+void addUserSeries(user *user);
 user createUserStruct(const char * username,const char * password);
 uint8_t verifyLogins(const char * username, const char * password);
 uint8_t loginFileInvert(const char *loginFile);

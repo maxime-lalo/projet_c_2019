@@ -8,14 +8,114 @@
 #include "database.h"
 #include "functions.h"
 
-void getGenreSerie(MYSQL_RES **res, int idSerie)
+genre *getSerieGenresList(int idSerie)
 {
     char request[294];
-    MYSQL_ROW row;
     char idSerieString[5];
+    char idGenreString[5];
+    MYSQL_ROW rowGenres;
+    MYSQL_ROW rowGenre;
+    MYSQL_RES *resultSerieGenres;
+    MYSQL_RES *resultGenre;
+    genre *genreInter;
+    genre *genreStart;
+
     sprintf(idSerieString, "%d", idSerie);
-    strcat(strcat(strcpy(request, "SELECT * FROM serie_user WHERE id_serie = \""), idSerieString), "\"");
-    fetchAllRows(request, &res);
+    strcat(strcat(strcpy(request, "SELECT * FROM serie_genre WHERE id_serie = \""), idSerieString), "\"");
+    fetchAllRows(request, &resultSerieGenres);
+
+    while ((rowGenres = mysql_fetch_row(resultSerieGenres)) != NULL)
+    {
+        sprintf(idGenreString, "%d", rowGenres[0]);
+        strcat(strcat(strcpy(request, "SELECT * FROM genre WHERE id = \""), idGenreString), "\"");
+        fetchAllRows(request, &resultGenre);
+
+        while ((rowGenre = mysql_fetch_row(resultGenre)) != NULL)
+        {
+            genreInter = malloc(sizeof(genre));
+            genreInter->id = atoi(rowGenre[0]);
+            strcpy(genreInter->name, rowGenre[1]);
+            genreInter->next = genreStart;
+            genreStart->next = genreInter;
+        }
+    }
+    return genreStart;
+}
+
+
+
+seasonNodes *getSerieSeasonsList(idSerie)
+{
+    uint8_t seasonNum = 1;
+    char request[294];
+    char idSerieString[5];
+    char seasonNumString[5];
+    MYSQL_ROW rowSeasons;
+    MYSQL_ROW rowSeason;
+    MYSQL_RES *resultSerieSeasons;
+    MYSQL_RES *resultSeason;
+    seasonNodes *nodeInter;
+    seasonNodes *nodeStart;
+    serie *serieInter;
+
+    sprintf(idSerieString, "%d", idSerie);
+    sprintf(seasonNumString, "%d", seasonNum);
+
+    strcat(strcat(strcat(strcat(strcpy(request, "SELECT * FROM episode WHERE id_serie =\""), idSerieString), "\" AND season =\""), seasonNumString), "\"");
+
+    fetchAllRows(request, &resultSerieSeasons);
+
+    while ((rowSeasons = mysql_fetch_row(resultSerieSeasons)) != NULL)
+    {
+        /*
+        genreInter = malloc(sizeof(genre));
+        genreInter->id = atoi(row[0]);
+        strcpy(genreInter->name, row[1]);
+        genreInter->next = genreStart;
+        genreStart->next = genreInter;
+        seasonNum++;
+        sprintf(seasonNumString, "%d", seasonNum);
+        strcat(strcat(strcat(strcat(strcpy(request, "SELECT * FROM episode WHERE id_serie =\""), idSerieString), "\" AND season =\""), seasonNumString), "\"");
+        */
+    }
+    return nodeStart;
+}
+
+seriesNode *getUserSeriesList(int idUser)
+{
+    char request[294];
+    char idUserString[5];
+    char idSerieString[5];
+    MYSQL_ROW rowSeries;
+    MYSQL_ROW rowSerie;
+    MYSQL_RES *resultUserSeries;
+    MYSQL_RES *resultSerie;
+    seriesNode *nodeStart;
+    seriesNode *nodeInter;
+    serie *serieInter;
+    sprintf(idUserString, "%d", idUser);
+    strcat(strcat(strcpy(request, "SELECT * FROM serie_user WHERE id_user = \""), idUserString), "\"");
+    fetchAllRows(request, &resultUserSeries);
+    while ((rowSeries = mysql_fetch_row(resultUserSeries)) != NULL)
+    {
+        sprintf(idSerieString, "%d", rowSeries[0]);
+        strcat(strcat(strcpy(request, "SELECT * FROM serie WHERE id = \""), idSerieString), "\"");
+        fetchAllRows(request, &resultSerie);
+        while ((rowSerie = mysql_fetch_row(resultSerie)) != NULL)
+        {
+            serieInter = malloc(sizeof(serie));
+            nodeInter = malloc(sizeof(seriesNode));
+            serieInter->id = atoi(rowSerie[0]);
+            strcpy(serieInter->name, rowSerie[1]);
+            strcpy(serieInter->imageLink, rowSerie[2]);
+            strcpy(serieInter->state, rowSerie[3]);
+            serieInter->genre = getSerieGenresList(serieInter->id);
+            nodeInter->serie = serieInter;
+            nodeInter->next = nodeStart;
+            nodeStart->next = nodeInter;
+        }
+    }
+    return nodeStart;
 }
 
 void addUserSeries(user *user)
@@ -23,35 +123,9 @@ void addUserSeries(user *user)
     char request[294];
     char userId[5];
     int numFields;
-    MYSQL_RES *resultSeries;
+
     MYSQL_RES *resultSeriesGenres;
     MYSQL_ROW row;
-    seriesNode *start;
-    serie *serie;
-    genre *genrePrev;
-    genre *genre;
-    sprintf(userId, "%d", user->id);
-    strcat(strcat(strcpy(request, "SELECT * FROM serie_user WHERE id_user = \""), userId), "\"");
-    fetchAllRows(request, &resultSeries);
-    while ((row = mysql_fetch_row(resultSeries)) != NULL)
-    {
-        serie = malloc(sizeof(serie));
-        getGenreSerie(&resultSeriesGenres, row[0]);
-        
-        while ((row = mysql_fetch_row(resultSeriesGenres)) != NULL)
-        {
-            genre = malloc(sizeof(genre));
-            genre = genrePrev;
-            genre->id = atoi(row[0]);
-            strcpy(genre->name, row[1]);
-        }
-
-        serie->id = atoi(row[0]);
-        strcpy(serie->name, row[1]);
-        strcpy(serie->imageLink, row[2]);
-        strcpy(serie->state, row[3]);
-        strcpy(serie->seasonNumber, row[4]);
-    }
 }
 
 user createUserStruct(const char *username, const char *password)

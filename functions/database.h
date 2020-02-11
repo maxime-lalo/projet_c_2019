@@ -44,11 +44,10 @@ typedef struct serie
 {
     int id;
     char name[256];
-    char ***genre;
+    genre * genre;
     char imageLink[1000];
     int state;
     char genre[256];
-    int seasonNumber;
     seasonNodes *seasonNodes;
 } serie;
 

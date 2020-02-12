@@ -67,7 +67,7 @@ GtkWidget *getMainPage()
     
     //Créations des 100 images et 100 boutons (tests)
     seriesNode * start;
-    start = getUserSeriesList(1);
+    start = getUserSeriesList(user.id);
 
     seriesNode * cursor;
     cursor = start;

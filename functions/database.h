@@ -47,7 +47,7 @@ typedef struct serie
     int id;
     char name[256];
     genre * genre;
-    char imageLink[1000];
+    char imageLink[200];
     int state;
     seasonNodes *seasonNodes;
 } serie;

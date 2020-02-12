@@ -43,6 +43,13 @@ main.o: main.c
 
 clean: 
 	rm -f $(OBJ)
+	rm -f functions.o
+	rm -f database.o
+	rm -f functions.o
+	rm -f main.o
+	rm -f manageGtk.o
+	rm -f shows.o
+	rm -f projC
 
 run: fclean all
 	./$(BIN)

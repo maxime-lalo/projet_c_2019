@@ -87,14 +87,24 @@ GtkWidget *getMainPage()
             get_page(imageOnlineLink,imageDirectoryLink);
         }
         gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
-        gtk_widget_show(image[i]);
 
         //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
-        series[i] = gtk_button_new();
-        gtk_button_set_relief(GTK_BUTTON(series[i]), GTK_RELIEF_NONE);
-        gtk_button_set_image(GTK_BUTTON(series[i]), GTK_WIDGET(image[i]));
-        gtk_flow_box_insert (GTK_FLOW_BOX(seriesFlowBox), series[i], -1);
+        series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
+
+        GtkBox * subContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+        GtkButton * showButton = GTK_BUTTON(gtk_button_new());
+        GtkButton * viewedButton = GTK_BUTTON(gtk_button_new());
+
+        gtk_button_set_label(showButton,"Afficher");
+        gtk_button_set_label(viewedButton,"Marquer comme vu");
+
+        gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(showButton));
+        gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(viewedButton));
+
+        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
+        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));
         
+        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(series[i]),-1);
         i++;
         cursor = (cursor->next == NULL)?NULL:cursor->next;
     }

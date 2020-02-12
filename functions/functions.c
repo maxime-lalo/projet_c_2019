@@ -7,6 +7,7 @@
 #include <errno.h>
 #include "database.h"
 #include "functions.h"
+#include <curl/curl.h>
 
 genre *getSerieGenresList(int idSerie)
 {
@@ -379,4 +380,24 @@ void freeSeriesNodeList(seriesNode **list)
         freeSerieStruct(&(prev->serie));
         free(prev);
     }
+}
+
+void get_page(const char* url, const char* file_name){
+    CURL *curl;
+ 
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
+    if(curl) {
+        FILE* file = fopen(file_name, "w");
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+ 
+        //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "name=daniel&project=curl");
+ 
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+ 
+        fclose(file);
+    }
+    curl_global_cleanup();
 }

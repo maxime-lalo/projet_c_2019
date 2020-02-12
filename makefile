@@ -10,11 +10,13 @@ ERROR_CFLAGS = -Wall -Werror -Wextra
 
 GTK_CFLAGS = `pkg-config --cflags gtk+-3.0`
 MYSQL_CFLAGS = `mysql_config --cflags`
-CFLAGS += $(ERROR_FLAGS) $(GTK_CFLAGS) $(MYSQL_CFLAGS) -I./
+CURL_CFLAGS = `curl-config --cflags`
+CFLAGS += $(ERROR_FLAGS) $(GTK_CFLAGS) $(MYSQL_CFLAGS) $(CURL_CFLAGS) -I./
 
 MYSQL_LDFLAGS = `mysql_config --libs`
 GTK_LDFLAGS = `pkg-config --libs gtk+-3.0`
-LDFLAGS +=  $(GTK_LDFLAGS) $(MYSQL_LDFLAGS) -I./
+CURL_LDFLAGS = `curl-config --libs`
+LDFLAGS +=  $(GTK_LDFLAGS) $(MYSQL_LDFLAGS) $(CURL_LDFLAGS) -I./
 
 all: $(BIN)
 

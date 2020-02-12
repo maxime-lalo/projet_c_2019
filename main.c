@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 #include <mysql.h>
+#include <curl/curl.h>
 #include "./functions/database.h"
 #include "./functions/manageGtk.h"
 #include "./functions/shows.h"

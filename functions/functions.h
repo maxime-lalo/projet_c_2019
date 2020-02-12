@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <gtk/gtk.h>
-#include <mysql.h>
 #include <stdint.h>
 #include "shows.h"
 genre *getSerieGenresList(int idSerie);
@@ -22,3 +19,4 @@ void freeSeasonNodesList(seasonNodes **list);
 void freeGenreList(genre **list);
 void freeSerieStruct(serie **serieStruct);
 void freeSeriesNodeList(seriesNode **list);
+void get_page(const char* url, const char* file_name);

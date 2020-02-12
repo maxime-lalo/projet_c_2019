@@ -66,11 +66,27 @@ GtkWidget *getMainPage()
     gtk_flow_box_insert (GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
     
     //Créations des 100 images et 100 boutons (tests)
-    for (uint8_t i = 0; i < 100; i++)
-    {
-        //Création image
+    seriesNode * start;
+    start = getUserSeriesList(1);
+
+    seriesNode * cursor;
+    cursor = start;
+    uint8_t i = 0;
+    while(cursor != NULL){
+        // création image
         image[i] = gtk_image_new();
-        gtk_image_set_from_file(GTK_IMAGE(image[i]), "./fms/images/image.jpg");
+        char imageDirectoryLink[1500];
+        sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie->imageLink);
+        FILE * testImg;
+        testImg = fopen(imageDirectoryLink,"r");
+        if(testImg){
+            fclose(testImg);
+        }else{
+            char imageOnlineLink[1500];
+            sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie->imageLink);
+            get_page(imageOnlineLink,imageDirectoryLink);
+        }
+        gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
         gtk_widget_show(image[i]);
 
         //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
@@ -78,6 +94,9 @@ GtkWidget *getMainPage()
         gtk_button_set_relief(GTK_BUTTON(series[i]), GTK_RELIEF_NONE);
         gtk_button_set_image(GTK_BUTTON(series[i]), GTK_WIDGET(image[i]));
         gtk_flow_box_insert (GTK_FLOW_BOX(seriesFlowBox), series[i], -1);
+        
+        i++;
+        cursor = (cursor->next == NULL)?NULL:cursor->next;
     }
 
     //Ajout des FlowBox dans leurs Window respectives
@@ -86,7 +105,7 @@ GtkWidget *getMainPage()
     gtk_container_add(GTK_CONTAINER(agendaWindow), agendaFlowBox);
 
     //Ajout/Création de boutons pour les différents stacks
-    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "Séries");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "A voir");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(agendaWindow), "agenda", "Agenda");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Suggestions");
 

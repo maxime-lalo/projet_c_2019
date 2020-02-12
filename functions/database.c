@@ -4,8 +4,8 @@
 MYSQL * initBdd(){
     MYSQL * conn;
 	const char * server = "localhost";
-	const char * user = "peter";
-	const char * password = "Peter!945914@";
+	const char * user = "max";
+	const char * password = "root";
 	const char * database = "projet_c";
 	
 	conn = mysql_init(NULL);

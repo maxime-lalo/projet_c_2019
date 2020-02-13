@@ -348,6 +348,16 @@ void freeEpisodesNodeList(episodesNode **list)
         free(prev);
     }
 }
+uint16_t countSeriesList(episodesNode **series){
+    episodesNode *inter = *series;
+    uint16_t seriesNumber = 0;
+    while (inter != NULL)
+    {
+        seriesNumber++;
+        inter = inter->next;
+    }
+    return seriesNumber;
+}
 
 char * dayName(char * dayName){
     if (strcmp(dayName,"Monday") == 0){

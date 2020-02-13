@@ -59,7 +59,6 @@ episodesNode * getSerieSeasonEpisodes(int idSerie, int seasonNum){
 
     while ((rowSeason = mysql_fetch_row(resultSeason)) != NULL)
     {
-        printf("test\n");
         episodeNodeInter = malloc(sizeof(episodesNode));
         episodeNodeInter->episode = getEpisode(atoi(rowSeason[0]));
         episodeNodeInter->next = episodeNodeStart;

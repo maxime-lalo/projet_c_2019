@@ -86,27 +86,23 @@ GtkWidget *getMainPage()
     seriesNode * cursor;
     cursor = nodeSeries;
     uint8_t i = 0;
-    //printf("Image LInk 1 : %s\n", user.series->serie->imageLink);
 
     while(cursor != NULL){
         // création image
         image[i] = gtk_image_new();
-        char imageDirectoryLink[1500] ;
-        strcat(strcpy(imageDirectoryLink, "./fms/images/"),cursor->serie.imageLink);
-        //sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie->imageLink);
-        printf("ImageLink : %s\n", cursor->serie.imageLink);
+        char imageDirectoryLink[300] ;
+        sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie.imageLink);
         FILE * testImg;
         testImg = fopen(imageDirectoryLink,"r");
         if(testImg){
             fclose(testImg);
         }else{
-            char imageOnlineLink[1500];
-            strcat(strcpy(imageOnlineLink, "./fms/images/"),cursor->serie.imageLink);
-            //sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie->imageLink);
+            char imageOnlineLink[300];
+            sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie.imageLink);
             get_page(imageOnlineLink,imageDirectoryLink);
         }
         gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
-        */
+        
         //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
         series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
 
@@ -120,7 +116,7 @@ GtkWidget *getMainPage()
         gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(showButton));
         gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(viewedButton));
 
-        //gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
+        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
         gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));
         
         gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(series[i]),-1);

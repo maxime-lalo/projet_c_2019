@@ -314,6 +314,52 @@ void get_page(const char* url, const char* file_name){
     curl_global_cleanup();
 }
 
+void freeSeriesNodeList(seriesNode **list)
+{
+    seriesNode *inter = *list;
+    seriesNode *prev = NULL;
+    while (inter != NULL)
+    {
+        prev = inter;
+        inter = inter->next;
+        free(prev);
+    }
+}
+
+void freeSeasonsNodeList(seasonsNode **list)
+{
+    seasonsNode *inter = *list;
+    seasonsNode *prev = NULL;
+    while (inter != NULL)
+    {
+        prev = inter;
+        inter = inter->next;
+        free(prev);
+    }
+}
+
+void freeEpisodesNodeList(episodesNode **list)
+{
+    episodesNode *inter = *list;
+    episodesNode *prev = NULL;
+    while (inter != NULL)
+    {
+        prev = inter;
+        inter = inter->next;
+        free(prev);
+    }
+}
+uint16_t countSeriesList(episodesNode **series){
+    episodesNode *inter = *series;
+    uint16_t seriesNumber = 0;
+    while (inter != NULL)
+    {
+        seriesNumber++;
+        inter = inter->next;
+    }
+    return seriesNumber;
+}
+
 char * dayName(char * dayName){
     if (strcmp(dayName,"Monday") == 0){
         return "Lundi";

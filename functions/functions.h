@@ -13,4 +13,8 @@ uint8_t verifyLoginFile(const char * loginFile);
 char ** getUserCred(const char * loginFile);
 uint8_t appDirectoryCheck(const char * appFolder);
 uint8_t createLoginFile(const char *loginFile, const char * username, char * password);
+void freeSeriesNodeList(seriesNode **list);
+void freeSeasonsNodeList(seasonsNode **list);
+void freeEpisodesNodeList(episodesNode **list);
+uint16_t countSeriesList(episodesNode **series);
 void get_page(const char* url, const char* file_name);

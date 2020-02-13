@@ -32,49 +32,26 @@ void closeApp(GtkWidget *button, gpointer **closeAppArgs){
     gtk_main_quit();
 }
 
-void getSeriePage(GtkWidget *button, gpointer **series)
-{
-    seriesNode * serie = (seriesNode * ) series;
-    char imageOnlineLink[300];
-
+void getSeriePage(GtkWidget *button, gpointer idSerie){
+    serie serie = getSerieStruct(GPOINTER_TO_INT(idSerie));
     GtkWidget *serieWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkWidget *serieContainer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    GtkWidget *serieEpisodesContainer = gtk_scrolled_window_new(NULL, NULL);
-    GtkWidget *seriesEpisodeBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(serieContainer), getImage(serie.imageLink));
 
-    GtkWidget *label[100];
-
-    GtkWidget *image = gtk_image_new();
-    sprintf(imageOnlineLink, "./fms/images/%s", serie->serie.imageLink);
-    gtk_image_set_from_file(GTK_IMAGE(image), imageOnlineLink);
-    gtk_container_add(GTK_CONTAINER(serieContainer), GTK_WIDGET(image));
-
-    gtk_container_add(GTK_CONTAINER(serieContainer), serieEpisodesContainer);
-
-    char episodeName[255];
-    seasonsNode *seasons;
-    seasons = serie->seasons;
-    uint8_t i = 0;
-
-    while (seasons != NULL)
-    {
-        episodesNode * episodes;
-        episodes = seasons->episodes;
-        while (episodes != NULL)
-        {
-            sprintf(episodeName,"%d", episodes->episode.id);
-            label[i] = gtk_label_new(episodeName);
-            gtk_container_add(GTK_CONTAINER(seriesEpisodeBox), label[i]);
-            episodes = episodes->next;
-        }
-        seasons = seasons->next;
+    seasonsNode * cursor = getSerieSeasonsList(GPOINTER_TO_INT(idSerie));
+    GtkListBox * listSeasons = GTK_LIST_BOX(gtk_list_box_new());
+    while( cursor != NULL ){
+        char labelSeasonTxt[200];
+        sprintf(labelSeasonTxt,"Saison %d",cursor->number);
+        GtkLabel * labelSeason = GTK_LABEL(gtk_label_new(labelSeasonTxt));
+        gtk_list_box_insert(listSeasons,GTK_WIDGET(labelSeason),-1);
+        cursor = cursor->next;
     }
-
-    gtk_window_set_default_size(GTK_WINDOW(serieWindow), 700, 500);
-    gtk_window_set_title(GTK_WINDOW(serieWindow), serie->serie.name);
+    gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(listSeasons));
+    gtk_window_set_default_size(GTK_WINDOW(serieWindow), 700, 289);
+    gtk_window_set_title(GTK_WINDOW(serieWindow), (char *) serie.name);
     gtk_window_set_position(GTK_WINDOW(serieWindow), GTK_WIN_POS_CENTER);
     g_signal_connect(G_OBJECT(serieWindow), "destroy", G_CALLBACK(gtk_widget_hide_on_delete), serieWindow);
-    gtk_container_add(GTK_CONTAINER(serieEpisodesContainer), seriesEpisodeBox);
     gtk_container_add(GTK_CONTAINER(serieWindow), serieContainer);
     gtk_widget_show_all(serieWindow);
 }
@@ -156,14 +133,14 @@ GtkWidget *getMainPage()
             /** 
              * Module pour les boutons
              */
+            u_int8_t idEpisode = atoi(rowEpisode[0]);
+            u_int8_t idSerie = atoi(rowEpisode[5]);
             GtkBox * containerButtons = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
             GtkButton * showButton = GTK_BUTTON(gtk_button_new());
             gtk_button_set_label(showButton,"Afficher la série");
-
-            GtkButton * markViewed = GTK_BUTTON(gtk_button_new());
-
-            int idEpisode = atoi(rowEpisode[0]);
+            g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(idSerie));
             
+            GtkButton * markViewed = GTK_BUTTON(gtk_button_new());
             if(isWatched(idEpisode)){
                 gtk_button_set_label(markViewed,"Marquer comme non vu");
             }else{
@@ -231,6 +208,7 @@ GtkWidget *getMainPage()
         gtk_container_add(GTK_CONTAINER(subContainer), GTK_WIDGET(showButton));
         gtk_container_add(GTK_CONTAINER(subContainer), GTK_WIDGET(viewedButton));
 
+        g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(cursor->serie.id));
         gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
         gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(serieNameLabel));
         gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));

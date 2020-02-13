@@ -21,7 +21,7 @@ LDFLAGS +=  $(GTK_LDFLAGS) $(MYSQL_LDFLAGS) $(CURL_LDFLAGS) -I./
 all: $(BIN)
 
 $(BIN): database.o main.o manageGtk.o shows.o functions.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -g
 #
 #$(OBJ): $(SRC)
 #	$(CC) $(CFLAGS) -o $@ -c $<

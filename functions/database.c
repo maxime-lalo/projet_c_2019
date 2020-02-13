@@ -18,7 +18,7 @@ MYSQL * initBdd(){
    return conn;
 }
 
-MYSQL_ROW  fetchRow(char * request){
+MYSQL_ROW fetchRow(char * request){
 	MYSQL * conn = initBdd();
     MYSQL_RES * res;
 	MYSQL_ROW row;

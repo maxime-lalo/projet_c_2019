@@ -59,9 +59,22 @@ GtkWidget *getMainPage()
     //Images pour les boutons représentants chacun une série
     GtkWidget *image[100];
 
+    // Gestion de l'agenda
+    GtkBox * containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+    for (uint8_t i = 0; i < 7; i++){
+        char request[500];
+        sprintf(request,"SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE(DATE_ADD(NOW(), INTERVAL %d DAY)) as date",i,i);
+        MYSQL_ROW answer = fetchRow(request);
+
+        char formatLabel[200];
+        sprintf(formatLabel,"%s | %s",(char *) answer[0],(char *) answer[1]);
+        GtkLabel * labelDay = GTK_LABEL(gtk_label_new(formatLabel));
+        gtk_container_add(GTK_CONTAINER(containerAgenda),GTK_WIDGET(labelDay));
+    }
+    
+    gtk_flow_box_insert (GTK_FLOW_BOX(agendaFlowBox), GTK_WIDGET(containerAgenda), -1);
+    
     //Labels tests
-    GtkWidget *label1 = gtk_label_new("Agenda :");
-    gtk_flow_box_insert (GTK_FLOW_BOX(agendaFlowBox), label1, -1);
     GtkWidget *label2 = gtk_label_new("Toutes les series");
     gtk_flow_box_insert (GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
     
@@ -117,7 +130,7 @@ GtkWidget *getMainPage()
     //Ajout/Création de boutons pour les différents stacks
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "A voir");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(agendaWindow), "agenda", "Agenda");
-    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Suggestions");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Rechercher");
 
     //Alignements des boutons Stack Switcher
     gtk_widget_set_halign(GTK_WIDGET(switcher), GTK_ALIGN_CENTER);
@@ -126,7 +139,7 @@ GtkWidget *getMainPage()
     gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
 
     //Configuration de base de la Window principale
-    gtk_window_set_default_size(GTK_WINDOW(mainWindow), 700, 400);
+    gtk_window_set_default_size(GTK_WINDOW(mainWindow), 700, 500);
     gtk_window_set_title(GTK_WINDOW(mainWindow), user.name);
     gtk_window_set_position(GTK_WINDOW(mainWindow), GTK_WIN_POS_CENTER);
     g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(gtk_main_quit), NULL);

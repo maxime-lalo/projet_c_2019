@@ -139,7 +139,7 @@ serie *getSerieStruct(int idSerie)
     serie = malloc(sizeof(serie));
     serie->id = atoi(rowSerie[0]);
     strcpy(serie->name, rowSerie[1]);
-    strcpy(serie->imageLink, rowSerie[2]);
+    //strcpy(serie->imageLink, rowSerie[2]);
     serie->state = atoi(rowSerie[3]);
     serie->genre = getSerieGenresList(serie->id);
     serie->seasonNodes = getSerieSeasonsList(serie->id);

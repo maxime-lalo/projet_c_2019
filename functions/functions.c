@@ -401,3 +401,28 @@ void get_page(const char* url, const char* file_name){
     }
     curl_global_cleanup();
 }
+
+char * dayName(char * dayName){
+    if (strcmp(dayName,"Monday") == 0){
+        return "Lundi";
+    }
+    if (strcmp(dayName,"Tuesday") == 0){
+        return "Mardi";
+    }
+    if (strcmp(dayName,"Wednesday") == 0){
+        return "Mercredi";
+    }
+    if (strcmp(dayName,"Thursday") == 0){
+        return "Jeudi";
+    }
+    if (strcmp(dayName,"Friday") == 0){
+        return "Vendredi";
+    }
+    if (strcmp(dayName,"Saturday") == 0){
+        return "Samedi";
+    }
+    if (strcmp(dayName,"Sunday") == 0){
+        return "Dimanche";
+    }
+    return NULL;
+}

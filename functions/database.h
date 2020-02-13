@@ -72,5 +72,5 @@ MYSQL *initBdd();
 MYSQL_ROW fetchRow(char *request);
 void fetchAllRows(char *request, MYSQL_RES **res);
 char *fetchColumn(char *request);
-
+char * dayName(char * dayName);
 #endif // __database_hls

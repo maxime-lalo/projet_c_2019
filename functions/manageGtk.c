@@ -41,7 +41,7 @@ GtkWidget *getMainPage()
 
     //Agenda
     GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkWidget *agendaFlowBox = gtk_flow_box_new();
+    GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
 
     //Series
     GtkWidget *seriesWindow = gtk_scrolled_window_new(NULL, NULL);
@@ -63,16 +63,15 @@ GtkWidget *getMainPage()
     GtkBox * containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
     for (uint8_t i = 0; i < 7; i++){
         char request[500];
-        sprintf(request,"SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE(DATE_ADD(NOW(), INTERVAL %d DAY)) as date",i,i);
+        sprintf(request,"SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE_FORMAT(DATE(DATE_ADD(NOW(), INTERVAL %d DAY)),%s) as date",i,i,"\"%d/%m/%Y\"");
         MYSQL_ROW answer = fetchRow(request);
 
         char formatLabel[200];
-        sprintf(formatLabel,"%s | %s",(char *) answer[0],(char *) answer[1]);
+        sprintf(formatLabel,"%s | %s",dayName(answer[0]),answer[1]);
         GtkLabel * labelDay = GTK_LABEL(gtk_label_new(formatLabel));
         gtk_container_add(GTK_CONTAINER(containerAgenda),GTK_WIDGET(labelDay));
     }
-    
-    gtk_flow_box_insert (GTK_FLOW_BOX(agendaFlowBox), GTK_WIDGET(containerAgenda), -1);
+    gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(containerAgenda));
     
     //Labels tests
     GtkWidget *label2 = gtk_label_new("Toutes les series");
@@ -87,20 +86,20 @@ GtkWidget *getMainPage()
     uint8_t i = 0;
     while(cursor != NULL){
         // création image
-        image[i] = gtk_image_new();
-        char imageDirectoryLink[1500];
+        /*image[i] = gtk_image_new();
+        char imageDirectoryLink[300];
         sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie->imageLink);
         FILE * testImg;
         testImg = fopen(imageDirectoryLink,"r");
         if(testImg){
             fclose(testImg);
         }else{
-            char imageOnlineLink[1500];
+            char imageOnlineLink[300];
             sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie->imageLink);
             get_page(imageOnlineLink,imageDirectoryLink);
         }
         gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
-
+        */
         //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
         series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
 
@@ -114,7 +113,7 @@ GtkWidget *getMainPage()
         gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(showButton));
         gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(viewedButton));
 
-        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
+        //gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
         gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));
         
         gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(series[i]),-1);
@@ -125,7 +124,7 @@ GtkWidget *getMainPage()
     //Ajout des FlowBox dans leurs Window respectives
     gtk_container_add(GTK_CONTAINER(seriesWindow), seriesFlowBox);
     gtk_container_add(GTK_CONTAINER(allSeriesWindow), allSeriesFlowBox);
-    gtk_container_add(GTK_CONTAINER(agendaWindow), agendaFlowBox);
+    gtk_container_add(GTK_CONTAINER(agendaWindow), GTK_WIDGET(agendaContainer));
 
     //Ajout/Création de boutons pour les différents stacks
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "A voir");

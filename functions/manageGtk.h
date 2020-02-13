@@ -8,3 +8,6 @@ GtkWidget * getMainPage();
 void verifyConnect(GtkWidget * button,GtkWidget * window);
 void errorWindow(char * errorMessage);
 void closeWindow(GtkWidget * widget,GtkWidget * window);
+GtkWidget * getImage(char * imageLink);
+u_int8_t isWatched(u_int8_t idEpisode);
+void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode);

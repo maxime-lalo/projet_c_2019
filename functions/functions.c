@@ -8,6 +8,7 @@
 #include "database.h"
 #include "functions.h"
 #include <curl/curl.h>
+#include <gtk/gtk.h>
 
 episode getEpisode(int idEpisode){
     char request[294];

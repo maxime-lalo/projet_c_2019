@@ -58,3 +58,13 @@ char * fetchColumn(char * request){
 	}
     
 }   
+
+u_int8_t sqlExecute(char * request){
+	MYSQL * conn = initBdd();
+	if (mysql_query(conn, request)) {
+		fprintf(stderr, "%s\n", mysql_error(conn));
+		return 0;
+	}else{
+		return 1;
+	}
+}

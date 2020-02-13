@@ -1,5 +1,5 @@
 CC = gcc
-BIN = projC
+BIN = Follow_My_Shows
 SRC = ./main.c \
 	  ./functions/database.c \
 	  ./functions/manageGtk.c \

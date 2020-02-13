@@ -17,44 +17,49 @@ typedef struct episode
     int airMonth;
     int airYear;
     int duration;
-    struct episode *next;
 } episode;
 
+typedef struct episodesNode
+{
+    episode episode;
+    struct episodesNode *next;
+} episodesNode;
+
 //Seasons
-typedef struct season
+typedef struct seasonsNode
 {
     int number;
-    episode *episodes;
-} season;
-
-typedef struct seasonNodes
-{
-    season *season;
-    struct seasonNodes *next;
-} seasonNodes;
+    episodesNode *episodes;
+    struct seasonsNode *next;
+} seasonsNode;
 
 //Genres
 typedef struct genre
 {
     int id;
     char name[256];
-    struct genre *next;
 } genre;
+
+typedef struct genresNode
+{
+    genre genre;
+    struct genresNode *next;
+} genresNode;
 
 //Series
 typedef struct serie
 {
     int id;
     char name[256];
-    genre * genre;
-    char imageLink[200];
+    char imageLink[255];
     int state;
-    seasonNodes *seasonNodes;
 } serie;
 
 typedef struct seriesNode
 {
-    serie *serie;
+    serie serie;
+    genre *genre;
+    seasonsNode *seasons;
     struct seriesNode *next;
 } seriesNode;
 

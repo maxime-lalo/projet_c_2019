@@ -28,9 +28,10 @@ GtkWidget *getMainPage()
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
-    addUserSeries(&user);
+    
     free(userCred);
 
+    //addUserSeries(&user);
     //Window principale + Box princiale (dans Window)
     GtkWidget *mainWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -54,10 +55,10 @@ GtkWidget *getMainPage()
     gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX(allSeriesFlowBox), 6);
 
     //Boutons
-    GtkWidget *series[100];
+    GtkWidget *series[3];
 
     //Images pour les boutons représentants chacun une série
-    GtkWidget *image[100];
+    GtkWidget *image[3];
 
     //Labels tests
     GtkWidget *label1 = gtk_label_new("Agenda :");
@@ -66,24 +67,30 @@ GtkWidget *getMainPage()
     gtk_flow_box_insert (GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
     
     //Créations des 100 images et 100 boutons (tests)
-    seriesNode * start;
-    start = getUserSeriesList(user.id);
-
+    //seriesNode * start;
+    //start = getUserSeriesList(user.id);
+    seriesNode * nodeSeries;
+    nodeSeries = getUserSeriesList(user.id);
     seriesNode * cursor;
-    cursor = start;
+    cursor = nodeSeries;
     uint8_t i = 0;
+    //printf("Image LInk 1 : %s\n", user.series->serie->imageLink);
+
     while(cursor != NULL){
         // création image
         image[i] = gtk_image_new();
-        char imageDirectoryLink[1500];
-        sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie->imageLink);
+        char imageDirectoryLink[1500] ;
+        strcat(strcpy(imageDirectoryLink, "./fms/images/"),cursor->serie.imageLink);
+        //sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie->imageLink);
+        printf("ImageLink : %s\n", cursor->serie.imageLink);
         FILE * testImg;
         testImg = fopen(imageDirectoryLink,"r");
         if(testImg){
             fclose(testImg);
         }else{
             char imageOnlineLink[1500];
-            sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie->imageLink);
+            strcat(strcpy(imageOnlineLink, "./fms/images/"),cursor->serie.imageLink);
+            //sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie->imageLink);
             get_page(imageOnlineLink,imageDirectoryLink);
         }
         gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
@@ -96,7 +103,7 @@ GtkWidget *getMainPage()
         gtk_flow_box_insert (GTK_FLOW_BOX(seriesFlowBox), series[i], -1);
         
         i++;
-        cursor = (cursor->next == NULL)?NULL:cursor->next;
+        cursor = cursor->next;
     }
 
     //Ajout des FlowBox dans leurs Window respectives

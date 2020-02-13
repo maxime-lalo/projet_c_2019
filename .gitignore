@@ -2,3 +2,5 @@
 main
 *.o
 projC
+fms
+tests

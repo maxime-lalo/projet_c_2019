@@ -42,7 +42,7 @@ GtkWidget *getMainPage()
 
     //Agenda
     GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkWidget *agendaFlowBox = gtk_flow_box_new();
+    GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
 
     //Series
     GtkWidget *seriesWindow = gtk_scrolled_window_new(NULL, NULL);
@@ -60,9 +60,21 @@ GtkWidget *getMainPage()
     //Images pour les boutons représentants chacun une série
     GtkWidget *image[3];
 
+    // Gestion de l'agenda
+    GtkBox * containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+    for (uint8_t i = 0; i < 7; i++){
+        char request[500];
+        sprintf(request,"SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE_FORMAT(DATE(DATE_ADD(NOW(), INTERVAL %d DAY)),%s) as date",i,i,"\"%d/%m/%Y\"");
+        MYSQL_ROW answer = fetchRow(request);
+
+        char formatLabel[200];
+        sprintf(formatLabel,"%s | %s",dayName(answer[0]),answer[1]);
+        GtkLabel * labelDay = GTK_LABEL(gtk_label_new(formatLabel));
+        gtk_container_add(GTK_CONTAINER(containerAgenda),GTK_WIDGET(labelDay));
+    }
+    gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(containerAgenda));
+    
     //Labels tests
-    GtkWidget *label1 = gtk_label_new("Agenda :");
-    gtk_flow_box_insert (GTK_FLOW_BOX(agendaFlowBox), label1, -1);
     GtkWidget *label2 = gtk_label_new("Toutes les series");
     gtk_flow_box_insert (GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
     
@@ -74,34 +86,40 @@ GtkWidget *getMainPage()
     seriesNode * cursor;
     cursor = nodeSeries;
     uint8_t i = 0;
-    //printf("Image LInk 1 : %s\n", user.series->serie->imageLink);
 
     while(cursor != NULL){
         // création image
         image[i] = gtk_image_new();
-        char imageDirectoryLink[1500] ;
-        strcat(strcpy(imageDirectoryLink, "./fms/images/"),cursor->serie.imageLink);
-        //sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie->imageLink);
-        printf("ImageLink : %s\n", cursor->serie.imageLink);
+        char imageDirectoryLink[300] ;
+        sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie.imageLink);
         FILE * testImg;
         testImg = fopen(imageDirectoryLink,"r");
         if(testImg){
             fclose(testImg);
         }else{
-            char imageOnlineLink[1500];
-            strcat(strcpy(imageOnlineLink, "./fms/images/"),cursor->serie.imageLink);
-            //sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie->imageLink);
+            char imageOnlineLink[300];
+            sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie.imageLink);
             get_page(imageOnlineLink,imageDirectoryLink);
         }
         gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
-        gtk_widget_show(image[i]);
-
-        //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
-        series[i] = gtk_button_new();
-        gtk_button_set_relief(GTK_BUTTON(series[i]), GTK_RELIEF_NONE);
-        gtk_button_set_image(GTK_BUTTON(series[i]), GTK_WIDGET(image[i]));
-        gtk_flow_box_insert (GTK_FLOW_BOX(seriesFlowBox), series[i], -1);
         
+        //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
+        series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
+
+        GtkBox * subContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+        GtkButton * showButton = GTK_BUTTON(gtk_button_new());
+        GtkButton * viewedButton = GTK_BUTTON(gtk_button_new());
+
+        gtk_button_set_label(showButton,"Afficher");
+        gtk_button_set_label(viewedButton,"Marquer comme vu");
+
+        gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(showButton));
+        gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(viewedButton));
+
+        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
+        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));
+        
+        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(series[i]),-1);
         i++;
         cursor = cursor->next;
     }
@@ -109,12 +127,12 @@ GtkWidget *getMainPage()
     //Ajout des FlowBox dans leurs Window respectives
     gtk_container_add(GTK_CONTAINER(seriesWindow), seriesFlowBox);
     gtk_container_add(GTK_CONTAINER(allSeriesWindow), allSeriesFlowBox);
-    gtk_container_add(GTK_CONTAINER(agendaWindow), agendaFlowBox);
+    gtk_container_add(GTK_CONTAINER(agendaWindow), GTK_WIDGET(agendaContainer));
 
     //Ajout/Création de boutons pour les différents stacks
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "A voir");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(agendaWindow), "agenda", "Agenda");
-    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Suggestions");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Rechercher");
 
     //Alignements des boutons Stack Switcher
     gtk_widget_set_halign(GTK_WIDGET(switcher), GTK_ALIGN_CENTER);
@@ -123,7 +141,7 @@ GtkWidget *getMainPage()
     gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
 
     //Configuration de base de la Window principale
-    gtk_window_set_default_size(GTK_WINDOW(mainWindow), 700, 400);
+    gtk_window_set_default_size(GTK_WINDOW(mainWindow), 700, 500);
     gtk_window_set_title(GTK_WINDOW(mainWindow), user.name);
     gtk_window_set_position(GTK_WINDOW(mainWindow), GTK_WIN_POS_CENTER);
     g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(gtk_main_quit), NULL);

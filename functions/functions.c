@@ -313,6 +313,42 @@ void get_page(const char* url, const char* file_name){
     curl_global_cleanup();
 }
 
+void freeSeriesNodeList(seriesNode **list)
+{
+    seriesNode *inter = *list;
+    seriesNode *prev = NULL;
+    while (inter != NULL)
+    {
+        prev = inter;
+        inter = inter->next;
+        free(prev);
+    }
+}
+
+void freeSeasonsNodeList(seasonsNode **list)
+{
+    seasonsNode *inter = *list;
+    seasonsNode *prev = NULL;
+    while (inter != NULL)
+    {
+        prev = inter;
+        inter = inter->next;
+        free(prev);
+    }
+}
+
+void freeEpisodesNodeList(episodesNode **list)
+{
+    episodesNode *inter = *list;
+    episodesNode *prev = NULL;
+    while (inter != NULL)
+    {
+        prev = inter;
+        inter = inter->next;
+        free(prev);
+    }
+}
+
 char * dayName(char * dayName){
     if (strcmp(dayName,"Monday") == 0){
         return "Lundi";

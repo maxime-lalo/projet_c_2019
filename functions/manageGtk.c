@@ -23,15 +23,24 @@ char *getEntryText(GtkWidget *entry)
     char *txt = (char *)gtk_entry_buffer_get_text(buffer);
 }
 
+void getSeriePage(GtkWidget *button, gpointer **series)
+{
+    seriesNode * serie = (seriesNode * ) series;
+    GtkWidget *serieWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_default_size(GTK_WINDOW(serieWindow), 700, 500);
+    gtk_window_set_title(GTK_WINDOW(serieWindow), serie->serie.name);
+    gtk_window_set_position(GTK_WINDOW(serieWindow), GTK_WIN_POS_CENTER);
+    g_signal_connect(G_OBJECT(serieWindow), "destroy", G_CALLBACK(gtk_widget_hide_on_delete), serieWindow);
+    gtk_widget_show_all(serieWindow);
+}
+
 GtkWidget *getMainPage()
 {
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
-    
     free(userCred);
 
-    //addUserSeries(&user);
     //Window principale + Box princiale (dans Window)
     GtkWidget *mainWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -42,17 +51,17 @@ GtkWidget *getMainPage()
 
     //Agenda
     GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+    GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
 
     //Series
     GtkWidget *seriesWindow = gtk_scrolled_window_new(NULL, NULL);
     GtkWidget *seriesFlowBox = gtk_flow_box_new();
-    gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX(seriesFlowBox), 9);
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(seriesFlowBox), 9);
 
     //Toutes Series + Recherche
     GtkWidget *allSeriesWindow = gtk_scrolled_window_new(NULL, NULL);
     GtkWidget *allSeriesFlowBox = gtk_flow_box_new();
-    gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX(allSeriesFlowBox), 6);
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(allSeriesFlowBox), 6);
 
     //Boutons
     GtkWidget *series[3];
@@ -61,65 +70,69 @@ GtkWidget *getMainPage()
     GtkWidget *image[3];
 
     // Gestion de l'agenda
-    GtkBox * containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
-    for (uint8_t i = 0; i < 7; i++){
+    GtkBox *containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
+    for (uint8_t i = 0; i < 7; i++)
+    {
         char request[500];
-        sprintf(request,"SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE_FORMAT(DATE(DATE_ADD(NOW(), INTERVAL %d DAY)),%s) as date",i,i,"\"%d/%m/%Y\"");
+        sprintf(request, "SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE_FORMAT(DATE(DATE_ADD(NOW(), INTERVAL %d DAY)),%s) as date", i, i, "\"%d/%m/%Y\"");
         MYSQL_ROW answer = fetchRow(request);
 
         char formatLabel[200];
-        sprintf(formatLabel,"%s | %s",dayName(answer[0]),answer[1]);
-        GtkLabel * labelDay = GTK_LABEL(gtk_label_new(formatLabel));
-        gtk_container_add(GTK_CONTAINER(containerAgenda),GTK_WIDGET(labelDay));
+        sprintf(formatLabel, "%s | %s", dayName(answer[0]), answer[1]);
+        GtkLabel *labelDay = GTK_LABEL(gtk_label_new(formatLabel));
+        gtk_container_add(GTK_CONTAINER(containerAgenda), GTK_WIDGET(labelDay));
     }
-    gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(containerAgenda));
-    
+    gtk_container_add(GTK_CONTAINER(agendaContainer), GTK_WIDGET(containerAgenda));
+
     //Labels tests
     GtkWidget *label2 = gtk_label_new("Toutes les series");
-    gtk_flow_box_insert (GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
-    
+    gtk_flow_box_insert(GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
+
     //Créations des 100 images et 100 boutons (tests)
-    //seriesNode * start;
-    //start = getUserSeriesList(user.id);
-    seriesNode * nodeSeries;
-    nodeSeries = getUserSeriesList(user.id);
-    seriesNode * cursor;
-    cursor = nodeSeries;
+    user.series = getUserSeriesList(user.id);
+    seriesNode *cursor;
+    cursor = user.series;
     uint8_t i = 0;
 
-    while(cursor != NULL){
+    while (cursor != NULL)
+    {
         // création image
         image[i] = gtk_image_new();
-        char imageDirectoryLink[300] ;
-        sprintf(imageDirectoryLink,"./fms/images/%s",cursor->serie.imageLink);
-        FILE * testImg;
-        testImg = fopen(imageDirectoryLink,"r");
-        if(testImg){
+        char imageDirectoryLink[300];
+        sprintf(imageDirectoryLink, "./fms/images/%s", cursor->serie.imageLink);
+        FILE *testImg;
+        testImg = fopen(imageDirectoryLink, "r");
+        if (testImg)
+        {
             fclose(testImg);
-        }else{
+        }
+        else
+        {
             char imageOnlineLink[300];
-            sprintf(imageOnlineLink,"https://eplp.fr/images/%s",cursor->serie.imageLink);
-            get_page(imageOnlineLink,imageDirectoryLink);
+            sprintf(imageOnlineLink, "https://eplp.fr/images/%s", cursor->serie.imageLink);
+            get_page(imageOnlineLink, imageDirectoryLink);
         }
         gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
-        
+
         //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
-        series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL,10);
+        series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
 
-        GtkBox * subContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
-        GtkButton * showButton = GTK_BUTTON(gtk_button_new());
-        GtkButton * viewedButton = GTK_BUTTON(gtk_button_new());
+        GtkBox *subContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
+        GtkButton *showButton = GTK_BUTTON(gtk_button_new());
+        GtkButton *viewedButton = GTK_BUTTON(gtk_button_new());
 
-        gtk_button_set_label(showButton,"Afficher");
-        gtk_button_set_label(viewedButton,"Marquer comme vu");
+        gtk_button_set_label(showButton, "Afficher");
+        gtk_button_set_label(viewedButton, "Marquer comme vu");
 
-        gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(showButton));
-        gtk_container_add(GTK_CONTAINER(subContainer),GTK_WIDGET(viewedButton));
+        gtk_container_add(GTK_CONTAINER(subContainer), GTK_WIDGET(showButton));
+        gtk_container_add(GTK_CONTAINER(subContainer), GTK_WIDGET(viewedButton));
 
-        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
-        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));
-        
-        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(series[i]),-1);
+        g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), (gpointer * )&(cursor->serie));
+
+        gtk_container_add(GTK_CONTAINER(series[i]), GTK_WIDGET(image[i]));
+        gtk_container_add(GTK_CONTAINER(series[i]), GTK_WIDGET(subContainer));
+
+        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox), GTK_WIDGET(series[i]), -1);
         i++;
         cursor = cursor->next;
     }

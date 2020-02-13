@@ -9,140 +9,116 @@
 #include "functions.h"
 #include <curl/curl.h>
 
-genre *getSerieGenresList(int idSerie)
-{
+episode getEpisode(int idEpisode){
     char request[294];
-    char idSerieString[5];
-    MYSQL_ROW rowGenres;
-    MYSQL_ROW rowGenre;
-    MYSQL_RES *resultSerieGenres;
-    MYSQL_RES *resultGenre;
-    genre *genreInter = NULL;
-    genre *genreStart = NULL;
+    char idEpisodeString[5];
+    char temp[13];
+    uint8_t i;
+    MYSQL_ROW rowEpisode;
+    MYSQL_RES *resultEpisode;
+    episode episode;
+    sprintf(idEpisodeString, "%d", idEpisode);
 
-    sprintf(idSerieString, "%d", idSerie);
-    strcat(strcat(strcpy(request, "SELECT * FROM serie_gender WHERE id_serie = \""), idSerieString), "\"");
-    fetchAllRows(request, &resultSerieGenres);
+    strcat(strcat(strcpy(request, "SELECT * FROM episode WHERE id = \""), idEpisodeString), "\"");
+    fetchAllRows(request, &resultEpisode);
 
-    while ((rowGenres = mysql_fetch_row(resultSerieGenres)) != NULL)
-    {
-        strcat(strcat(strcpy(request, "SELECT * FROM gender WHERE id = \""), rowGenres[0]), "\"");
-        fetchAllRows(request, &resultGenre);
-
-        while ((rowGenre = mysql_fetch_row(resultGenre)) != NULL)
-        {
-            genreInter = malloc(sizeof(genre));
-            genreInter->id = atoi(rowGenre[0]);
-            strcpy(genreInter->name, rowGenre[1]);
-            genreInter->next = genreStart;
-            genreStart = genreInter;
-        }
-    }
-    return genreStart;
+    rowEpisode = mysql_fetch_row(resultEpisode);
+    episode.id = atoi(rowEpisode[0]);
+    episode.idSerie = atoi(rowEpisode[1]);
+    episode.season = atoi(rowEpisode[2]);
+    episode.number = atoi(rowEpisode[3]);
+    strcpy(episode.name, rowEpisode[4]);
+    strcpy(episode.shortDescription, rowEpisode[5]); 
+    for(i=0; i<4; i++)temp[i] = rowEpisode[6][i];
+    temp[4]= '\0';
+    episode.airYear = atoi(temp);
+    for(i=5; i<7; i++)temp[i] = rowEpisode[6][i];
+    temp[7] = '\0';
+    episode.airMonth = atoi(temp+5);
+    for(i=8; i<10; i++)temp[i] = rowEpisode[6][i];
+    temp[11] = '\0';
+    episode.airDay = atoi(temp+8);
+    episode.duration = atoi(rowEpisode[7]);
+    return episode;
 }
 
-season *getSeasonEpisodesStruct(int seasonNum, int idSerie)
-{
-
-    char request[294];
-    char seasonNumString[5];
-    char idSerieString[5];
-    char temp[5];
-    MYSQL_ROW rowEpisodes;
-    MYSQL_RES *resultSeasonEpisodes;
-    episode *episodeInter = NULL;
-    episode *episodeStart = NULL;
-    season *season = NULL;
-
-    season = malloc(sizeof(season));
-
-    if (season != NULL)
-    {
-        sprintf(seasonNumString, "%d", seasonNum);
-        sprintf(idSerieString, "%d", idSerie);
-        strcat(strcat(strcat(strcat(strcpy(request, "SELECT * FROM episode WHERE id_serie =\""), idSerieString), "\" AND season =\""), seasonNumString), "\" ORDER BY number DESC");
-
-        fetchAllRows(request, &resultSeasonEpisodes);
-        while ((rowEpisodes = mysql_fetch_row(resultSeasonEpisodes)) != NULL)
-        {
-            episodeInter = malloc(sizeof(episode));
-            episodeInter->id = atoi(rowEpisodes[0]);
-            episodeInter->idSerie = atoi(rowEpisodes[1]);
-            episodeInter->season = atoi(rowEpisodes[2]);
-            episodeInter->number = atoi(rowEpisodes[3]);
-            strcpy(episodeInter->name, rowEpisodes[4]);
-            strcpy(episodeInter->shortDescription, rowEpisodes[5]);
-            strncpy(temp, rowEpisodes[6], 4);
-            temp[4] = '\0';
-            episodeInter->airYear = atoi(temp);
-            strncpy(temp, (rowEpisodes[6] + 5), 2);
-            temp[2] = '\0';
-            episodeInter->airMonth = atoi(temp);
-            strcpy(temp, (rowEpisodes[6] + 8));
-            episodeInter->airDay = atoi(temp);
-            episodeInter->next = episodeStart;
-            episodeStart = episodeInter;
-        }
-        season->number = seasonNum;
-        season->episodes = episodeStart;
-    }
-
-    return season;
-}
-
-seasonNodes *getSerieSeasonsList(int idSerie)
-{
-    uint8_t seasonNum = 1;
+episodesNode * getSerieSeasonEpisodes(int idSerie, int seasonNum){
     char request[294];
     char idSerieString[5];
     char seasonNumString[5];
-    MYSQL_ROW rowSeasons;
-    MYSQL_RES *resultSerieSeasons;
-    seasonNodes *nodeInter = NULL;
-    seasonNodes *nodeStart = NULL;
+    MYSQL_ROW rowSeason;
+    MYSQL_RES *resultSeason;
+    episodesNode * episodeNodeInter = NULL;
+    episodesNode * episodeNodeStart = NULL;
 
     sprintf(idSerieString, "%d", idSerie);
     sprintf(seasonNumString, "%d", seasonNum);
 
-    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie =\""), idSerieString), "\" AND season =\""), seasonNumString), "\"");
+    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season =\""),seasonNumString),"\" ORDER BY number DESC");
+    fetchAllRows(request, &resultSeason);
 
-    fetchAllRows(request, &resultSerieSeasons);
-
-    while ((rowSeasons = mysql_fetch_row(resultSerieSeasons)) != NULL)
+    while ((rowSeason = mysql_fetch_row(resultSeason)) != NULL)
     {
-        nodeInter = malloc(sizeof(seasonNodes));
-        nodeInter->season = getSeasonEpisodesStruct(seasonNum, idSerie);
-        nodeInter->next = nodeStart;
-        nodeStart = nodeInter;
-
-        seasonNum++;
-        sprintf(seasonNumString, "%d", seasonNum);
-        strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie =\""), idSerieString), "\" AND season =\""), seasonNumString), "\"");
-        fetchAllRows(request, &resultSerieSeasons);
+        printf("test\n");
+        episodeNodeInter = malloc(sizeof(episodesNode));
+        episodeNodeInter->episode = getEpisode(atoi(rowSeason[0]));
+        episodeNodeInter->next = episodeNodeStart;
+        episodeNodeStart = episodeNodeInter; 
     }
-    return nodeStart;
+    return episodeNodeStart;
 }
 
-serie *getSerieStruct(int idSerie)
+seasonsNode * getSerieSeasonsList(int idSerie)
+{
+    char request[294];
+    char idSerieString[5];
+    int seasonNum = 1;
+    char seasonNumString[5];
+    MYSQL_ROW rowSeasons;
+    MYSQL_RES *resultSerieSeasons;
+    seasonsNode *seasonNodeStart = NULL;
+    seasonsNode *seasonNodeInter = NULL;
+
+    sprintf(idSerieString, "%d", idSerie);
+    sprintf(seasonNumString, "%d", seasonNum);
+
+    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season = \""),seasonNumString),"\" ORDER BY season DESC");
+    fetchAllRows(request, &resultSerieSeasons);
+    
+    while ((rowSeasons = mysql_fetch_row(resultSerieSeasons)) != NULL)
+    {
+        //printf("test\n");
+        seasonNodeInter = malloc(sizeof(seasonsNode));
+        seasonNodeInter->episodes = getSerieSeasonEpisodes(idSerie, seasonNum);
+        seasonNodeInter->number = seasonNum;
+        seasonNodeInter->next = seasonNodeStart;
+        seasonNodeStart = seasonNodeInter; 
+        seasonNum ++;
+        sprintf(seasonNumString, "%d", seasonNum);
+        strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season = \""),seasonNumString),"\"");
+        fetchAllRows(request, &resultSerieSeasons);
+    }
+    return seasonNodeStart;
+}
+
+serie getSerieStruct(int idSerie)
 {
     char request[294];
     char idSerieString[5];
     MYSQL_ROW rowSerie;
     MYSQL_RES *resultSerie;
-    serie *serie = NULL;
+    serie serie;
+    //printf("test\n");
     sprintf(idSerieString, "%d", idSerie);
-
     strcat(strcat(strcpy(request, "SELECT * FROM serie WHERE id = \""), idSerieString), "\"");
     fetchAllRows(request, &resultSerie);
     rowSerie = mysql_fetch_row(resultSerie);
+    serie.id = atoi(rowSerie[0]);
+    strcpy(serie.name, rowSerie[1]);
+    strcpy(serie.imageLink, rowSerie[2]);
+    serie.state = atoi(rowSerie[3]);
+    //printf("test\n");
 
-    serie = malloc(sizeof(serie));
-    serie->id = atoi(rowSerie[0]);
-    strcpy(serie->name, rowSerie[1]);
-    //strcpy(serie->imageLink, rowSerie[2]);
-    serie->state = atoi(rowSerie[3]);
-    serie->genre = getSerieGenresList(serie->id);
-    serie->seasonNodes = getSerieSeasonsList(serie->id);
     return serie;
 }
 
@@ -152,19 +128,24 @@ seriesNode *getUserSeriesList(int idUser)
     char idUserString[5];
     MYSQL_ROW rowSeries;
     MYSQL_RES *resultUserSeries;
-    seriesNode *nodeStart = NULL;
-    seriesNode *nodeInter = NULL;
+    seriesNode *seriesNodeStart = NULL;
+    seriesNode *seriesNodeInter = NULL;
     sprintf(idUserString, "%d", idUser);
+
     strcat(strcat(strcpy(request, "SELECT id_serie FROM serie_user WHERE id_user = \""), idUserString), "\"");
     fetchAllRows(request, &resultUserSeries);
+
     while ((rowSeries = mysql_fetch_row(resultUserSeries)) != NULL)
     {
-        nodeInter = malloc(sizeof(seriesNode));
-        nodeInter->serie = getSerieStruct(atoi(rowSeries[0]));
-        nodeInter->next = nodeStart;
-        nodeStart = nodeInter;
+        //printf("test\n");
+        seriesNodeInter = malloc(sizeof(seriesNode));
+        seriesNodeInter->serie = getSerieStruct(atoi(rowSeries[0]));
+        seriesNodeInter->seasons = getSerieSeasonsList(atoi(rowSeries[0]));
+        seriesNodeInter->next = seriesNodeStart;
+        seriesNodeStart = seriesNodeInter;
     }
-    return nodeStart;
+    
+    return seriesNodeStart;
 }
 
 void addUserSeries(user *user)
@@ -311,76 +292,7 @@ uint8_t appDirectoryCheck(const char *appFolder)
     return 1;
 }
 
-void freeEpisodeList(episode **list)
-{
-    episode *inter = *list;
-    void *prev = NULL;
-    while (inter != NULL)
-    {
-        prev = inter;
-        inter = inter->next;
-        free(prev);
-    }
-}
 
-void freeSeasonStruct(season **seasonStruct)
-{
-    if (*seasonStruct != NULL)
-    {
-        season *inter = *seasonStruct;
-        freeEpisodeList(&(inter->episodes));
-        free(inter);
-    }
-}
-
-void freeSeasonNodesList(seasonNodes **list)
-{
-    seasonNodes *inter = *list;
-    seasonNodes *prev = NULL;
-    while (inter != NULL)
-    {
-        prev = inter;
-        inter = inter->next;
-        freeSeasonStruct(&(prev->season));
-        free(prev);
-    }
-}
-
-void freeGenreList(genre **list)
-{
-    genre *inter = *list;
-    genre *prev = NULL;
-    while (inter != NULL)
-    {
-        prev = inter;
-        inter = inter->next;
-        free(prev);
-    }
-}
-
-void freeSerieStruct(serie **serieStruct)
-{
-    if (*serieStruct != NULL)
-    {
-        serie *inter = *serieStruct;
-        freeSeasonNodesList(&(inter->seasonNodes));
-        freeGenreList(&(inter->genre));
-        free(inter);
-    }
-}
-
-void freeSeriesNodeList(seriesNode **list)
-{
-    seriesNode *inter = *list;
-    seriesNode *prev = NULL;
-    while (inter != NULL)
-    {
-        prev = inter;
-        inter = inter->next;
-        freeSerieStruct(&(prev->serie));
-        free(prev);
-    }
-}
 
 void get_page(const char* url, const char* file_name){
     CURL *curl;

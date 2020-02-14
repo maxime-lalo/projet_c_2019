@@ -17,7 +17,6 @@ int main(int argc,char **argv){
     appDirectoryCheck(APP_FOLDER);
 
     window = isConnected()?getMainPage():getLoginPage();
-
     gtk_widget_show_all(window);
 
     gtk_main();

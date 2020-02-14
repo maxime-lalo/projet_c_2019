@@ -17,6 +17,77 @@ int isConnected()
     }
     return 0;
 }
+void showSearchedSeries(GtkWidget * widget,argsSearchStruct * arg){
+    char * entryValue = getEntryText(GTK_WIDGET(arg->entry));
+
+    char request[255];
+    sprintf(request,"SELECT id,nom,image,state,thumbnail FROM serie WHERE nom LIKE %s%s%s","\"%",entryValue,"%\"");
+    MYSQL_RES *result;
+    fetchAllRows(request,&result);
+
+    MYSQL_ROW row;
+
+    GList *children, *iter;
+
+    children = gtk_container_get_children(GTK_CONTAINER(arg->container));
+    for(iter = children; iter != NULL; iter = g_list_next(iter))
+    gtk_widget_destroy(GTK_WIDGET(iter->data));
+    g_list_free(children);
+
+    while ((row = mysql_fetch_row(result)) != NULL){
+        GtkBox * serieContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+        gtk_flow_box_insert(GTK_FLOW_BOX(arg->container),GTK_WIDGET(serieContainer),-1);
+
+        GtkButton * showSerie = GTK_BUTTON(gtk_button_new());
+        gtk_button_set_label(showSerie,"Afficher la série");
+
+        GtkButton * followSerie = GTK_BUTTON(gtk_button_new());
+        gtk_button_set_label(followSerie,"Suivre la série");
+
+        gtk_container_add(GTK_CONTAINER(serieContainer),getImage(row[2]));
+        gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(showSerie));
+        gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(followSerie));
+        uint8_t idSerie = atoi(row[0]);
+        g_signal_connect(showSerie,"clicked",G_CALLBACK(getSeriePage),GINT_TO_POINTER(idSerie));
+    }
+    gtk_widget_show_all(arg->container);
+}
+
+GtkWidget * getSearchWindow(){
+    GtkWidget * searchWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
+    const char *LOGIN_FILE = "./fms/user.bin";
+    char **userCred = getUserCred(LOGIN_FILE);
+    user user = createUserStruct(userCred[0], userCred[1]);
+    free(userCred);
+
+    GtkBox * mainContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
+    gtk_container_add(GTK_CONTAINER(searchWindow),GTK_WIDGET(mainContainer));
+
+    GtkBox * searchContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL,10));
+    gtk_box_set_homogeneous(GTK_BOX(searchContainer),TRUE);
+    gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(searchContainer));
+
+    gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(gtk_separator_new(GTK_ORIENTATION_HORIZONTAL)));
+    GtkEntry * searchEntry = GTK_ENTRY(gtk_entry_new());
+    GtkButton * searchButton = GTK_BUTTON(gtk_button_new());
+    gtk_button_set_label(searchButton,"Rechercher");
+
+    GtkFlowBox * resultContainer = GTK_FLOW_BOX(gtk_flow_box_new());
+    gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(resultContainer));
+    
+    argsSearchStruct * args;
+    args = malloc(sizeof(argsSearchStruct));
+    args->entry = GTK_WIDGET(searchEntry);
+    args->container = GTK_WIDGET(resultContainer);
+
+    g_signal_connect(searchButton,"clicked",G_CALLBACK(showSearchedSeries),args);
+    
+    gtk_container_add(GTK_CONTAINER(searchContainer),GTK_WIDGET(searchEntry));
+    gtk_container_add(GTK_CONTAINER(searchContainer),GTK_WIDGET(searchButton));
+
+    return searchWindow;
+}  
+
 GtkWidget * getTooSeeWindow(){
     GtkWidget * seriesWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
     const char *LOGIN_FILE = "./fms/user.bin";
@@ -142,12 +213,10 @@ GtkWidget * getAgendaWindow(){
     gtk_container_add(GTK_CONTAINER(agendaWindow), GTK_WIDGET(agendaContainer));
     return agendaWindow;
 }
-char *getEntryText(GtkWidget *entry)
-{
+char *getEntryText(GtkWidget *entry){
     GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(entry));
     char *txt = (char *)gtk_entry_buffer_get_text(buffer);
 }
-
 void closeApp(GtkWidget *button, gpointer **closeAppArgs){
     seriesNode * series = (seriesNode * ) closeAppArgs;
     freeEpisodesNodeList(&series->seasons->episodes);
@@ -155,7 +224,6 @@ void closeApp(GtkWidget *button, gpointer **closeAppArgs){
     freeSeriesNodeList(&series);
     gtk_main_quit();
 }
-
 void getSeriePage(GtkWidget *button, gpointer idSerie){
     serie serie = getSerieStruct(GPOINTER_TO_INT(idSerie));
     GtkWidget *serieWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -195,23 +263,10 @@ GtkWidget * getMainPage(){
     GtkWidget *stack = gtk_stack_new();
     GtkStackSwitcher *switcher = GTK_STACK_SWITCHER(gtk_stack_switcher_new());
 
-
-    /**
-     * Début recherche
-     */
-    GtkWidget *allSeriesWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkWidget *allSeriesFlowBox = gtk_flow_box_new();
-    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(allSeriesFlowBox), 6);
-    gtk_container_add(GTK_CONTAINER(allSeriesWindow), allSeriesFlowBox);
-    /**
-     * Fin recherche
-     */
-
-
     //Ajout/Création de boutons pour les différents stacks
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getTooSeeWindow()), "series", "A voir");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getAgendaWindow()), "agenda", "Agenda");
-    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Rechercher");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getSearchWindow()), "allSeries", "Rechercher");
 
     //Alignements des boutons Stack Switcher
     gtk_widget_set_halign(GTK_WIDGET(switcher), GTK_ALIGN_CENTER);

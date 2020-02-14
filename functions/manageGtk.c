@@ -59,6 +59,65 @@ void showSearchedSeries(GtkWidget * widget,argsSearchStruct * arg){
     }
     gtk_widget_show_all(arg->container);
 }
+GtkWidget *getTooSeeWindow(){
+    GtkWidget *seriesWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
+    const char *LOGIN_FILE = "./fms/user.bin";
+    char **userCred = getUserCred(LOGIN_FILE);
+    user user = createUserStruct(userCred[0], userCred[1]);
+    free(userCred);
+
+    episodesNode * episodeToSee;
+    char seasonEpiosdeString [511];
+    user.series = getUserSeriesList(user.id);
+
+    GtkWidget *seriesFlowBox = gtk_flow_box_new();
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(seriesFlowBox), 9);
+
+    seriesNode *cursor;
+    cursor = user.series;
+    while (cursor != NULL)
+    {
+        episodeToSee = getLastNotSeenEpisode(user.id, cursor->serie.id);
+        if (episodeToSee != NULL){
+            // On crée le container qui va contenir toutes les infos sur la série
+            GtkBox *mainContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
+
+            // On crée les boutons
+            GtkButton *showButton = GTK_BUTTON(gtk_button_new());
+            gtk_button_set_label(showButton, "Afficher");
+
+            GtkButton *viewedButton = GTK_BUTTON(gtk_button_new());
+            gtk_button_set_label(viewedButton, "Marquer comme vu");
+
+            // On crée un label qui contiendra le nom de la série
+            GtkLabel *serieNameLabel = GTK_LABEL(gtk_label_new(cursor->serie.name));
+
+            GtkLabel *episodeNameLabel = GTK_LABEL(gtk_label_new(episodeToSee->episode.name));
+
+            sprintf(seasonEpiosdeString, "S%dE%d", episodeToSee->episode.season, episodeToSee->episode.number);
+            GtkLabel *seasonEpiosdeLabel = GTK_LABEL(gtk_label_new(seasonEpiosdeString));
+
+            // On ajoute tout au container dans le bon ordre
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(getImage(cursor->serie.imageLink)));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(serieNameLabel));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(episodeNameLabel));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(seasonEpiosdeLabel));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(showButton));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(viewedButton));
+
+            // On link les signal aux boutons
+            g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(cursor->serie.id));
+            g_signal_connect(G_OBJECT(viewedButton), "clicked", G_CALLBACK(changeStatusEpisode), GINT_TO_POINTER(episodeToSee->episode.id));
+            // On ajoute le tout au flowbox
+            gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox), GTK_WIDGET(mainContainer), -1);
+        }
+        // On passe à la prochaine série contenu dans la liste chaînée
+        cursor = cursor->next;
+    }
+    // On ajoute la flowbox à la window puis on return la window
+    gtk_container_add(GTK_CONTAINER(seriesWindow), GTK_WIDGET(seriesFlowBox));
+    return seriesWindow;
+}
 GtkWidget * getSearchWindow(){
     GtkWidget * searchWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
     const char *LOGIN_FILE = "./fms/user.bin";
@@ -176,10 +235,6 @@ char *getEntryText(GtkWidget *entry){
     char *txt = (char *)gtk_entry_buffer_get_text(buffer);
 }
 void closeApp(GtkWidget *button, gpointer **closeAppArgs){
-    seriesNode * series = (seriesNode * ) closeAppArgs;
-    freeEpisodesNodeList(&series->seasons->episodes);
-    freeSeasonsNodeList(&series->seasons);
-    freeSeriesNodeList(&series);
     gtk_main_quit();
 }
 void getSeriePage(GtkWidget *button, gpointer idSerie){
@@ -205,7 +260,6 @@ void getSeriePage(GtkWidget *button, gpointer idSerie){
     gtk_container_add(GTK_CONTAINER(serieWindow), serieContainer);
     gtk_widget_show_all(serieWindow);
 }
-
 GtkWidget * getMainPage(){
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
@@ -222,7 +276,7 @@ GtkWidget * getMainPage(){
     GtkStackSwitcher *switcher = GTK_STACK_SWITCHER(gtk_stack_switcher_new());
 
     //Ajout/Création de boutons pour les différents stacks
-    //gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getTooSeeWindow()), "series", "A voir");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getTooSeeWindow()), "series", "A voir");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getAgendaWindow()), "agenda", "Agenda");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getSearchWindow()), "allSeries", "Rechercher");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getMySeriesWindow()), "mySeries", "Mes séries");
@@ -236,7 +290,7 @@ GtkWidget * getMainPage(){
     //Configuration de base de la Window principale
     gtk_window_set_title(GTK_WINDOW(mainWindow), user.name);
     gtk_window_set_position(GTK_WINDOW(mainWindow), GTK_WIN_POS_CENTER);
-    g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(closeApp), (gpointer *)&(user.series->serie));
+    g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(closeApp), NULL);
 
     //Ajout du Stack Switcher et Stack au mainContainer
     gtk_box_pack_start(GTK_BOX(mainContainer), GTK_WIDGET(switcher), FALSE, FALSE, 10);
@@ -248,7 +302,6 @@ GtkWidget * getMainPage(){
     gtk_window_maximize (GTK_WINDOW(mainWindow));
     return mainWindow;
 }
-
 void verifyConnect(GtkWidget *button, GtkWidget *loginWindow)
 {
     const char *LOGIN_FILE = "./fms/user.bin";
@@ -299,7 +352,6 @@ void verifyConnect(GtkWidget *button, GtkWidget *loginWindow)
         printf("\n Username ou mot de passe incorrect\n");
     }
 }
-
 GtkWidget *getLoginPage()
 {
     GtkWidget *loginWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -326,7 +378,6 @@ GtkWidget *getLoginPage()
     gtk_container_add(GTK_CONTAINER(loginWindow), mainContainer);
     return loginWindow;
 }
-
 GtkWidget * getImage(char * imageLink){
     GtkWidget * imageSerie = gtk_image_new();
     char imageLinkInDirectory[200];
@@ -344,7 +395,6 @@ GtkWidget * getImage(char * imageLink){
     gtk_image_set_from_file(GTK_IMAGE(imageSerie), imageLinkInDirectory);
     return imageSerie;
 }
-
 u_int8_t isWatched(u_int8_t idEpisode){
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
@@ -362,7 +412,6 @@ u_int8_t isWatched(u_int8_t idEpisode){
     }
    
 }
-
 u_int8_t isFollowed(u_int8_t idSerie){
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
@@ -380,7 +429,6 @@ u_int8_t isFollowed(u_int8_t idSerie){
     }
    
 }
-
 void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode){
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
@@ -398,7 +446,6 @@ void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode){
     gtk_widget_show(GTK_WIDGET(widget));
     sqlExecute(request);
 }
-
 void changeStatusSerie(GtkWidget * widget,gpointer idSerie){
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);

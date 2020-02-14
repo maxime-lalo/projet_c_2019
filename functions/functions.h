@@ -16,5 +16,7 @@ uint8_t createLoginFile(const char *loginFile, const char * username, char * pas
 void freeSeriesNodeList(seriesNode **list);
 void freeSeasonsNodeList(seasonsNode **list);
 void freeEpisodesNodeList(episodesNode **list);
+seriesNode *getSeriesList(int idSerie);
 uint16_t countSeriesList(episodesNode **series);
 void get_page(const char* url, const char* file_name);
+episodesNode * getLastNotSeenEpisode(int idUser, int idSerie);

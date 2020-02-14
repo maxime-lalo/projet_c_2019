@@ -10,7 +10,8 @@
 #include <curl/curl.h>
 #include <gtk/gtk.h>
 
-episode getEpisode(int idEpisode){
+episode getEpisode(int idEpisode)
+{
     char request[294];
     char idEpisodeString[5];
     char temp[13];
@@ -29,33 +30,37 @@ episode getEpisode(int idEpisode){
     episode.season = atoi(rowEpisode[2]);
     episode.number = atoi(rowEpisode[3]);
     strcpy(episode.name, rowEpisode[4]);
-    strcpy(episode.shortDescription, rowEpisode[5]); 
-    for(i=0; i<4; i++)temp[i] = rowEpisode[6][i];
-    temp[4]= '\0';
+    strcpy(episode.shortDescription, rowEpisode[5]);
+    for (i = 0; i < 4; i++)
+        temp[i] = rowEpisode[6][i];
+    temp[4] = '\0';
     episode.airYear = atoi(temp);
-    for(i=5; i<7; i++)temp[i] = rowEpisode[6][i];
+    for (i = 5; i < 7; i++)
+        temp[i] = rowEpisode[6][i];
     temp[7] = '\0';
-    episode.airMonth = atoi(temp+5);
-    for(i=8; i<10; i++)temp[i] = rowEpisode[6][i];
+    episode.airMonth = atoi(temp + 5);
+    for (i = 8; i < 10; i++)
+        temp[i] = rowEpisode[6][i];
     temp[11] = '\0';
-    episode.airDay = atoi(temp+8);
+    episode.airDay = atoi(temp + 8);
     episode.duration = atoi(rowEpisode[7]);
     return episode;
 }
 
-episodesNode * getSerieSeasonEpisodes(int idSerie, int seasonNum){
+episodesNode *getSerieSeasonEpisodes(int idSerie, int seasonNum)
+{
     char request[294];
     char idSerieString[5];
     char seasonNumString[5];
     MYSQL_ROW rowSeason;
     MYSQL_RES *resultSeason;
-    episodesNode * episodeNodeInter = NULL;
-    episodesNode * episodeNodeStart = NULL;
+    episodesNode *episodeNodeInter = NULL;
+    episodesNode *episodeNodeStart = NULL;
 
     sprintf(idSerieString, "%d", idSerie);
     sprintf(seasonNumString, "%d", seasonNum);
 
-    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season =\""),seasonNumString),"\" ORDER BY number DESC");
+    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season =\""), seasonNumString), "\" ORDER BY number DESC");
     fetchAllRows(request, &resultSeason);
 
     while ((rowSeason = mysql_fetch_row(resultSeason)) != NULL)
@@ -63,12 +68,12 @@ episodesNode * getSerieSeasonEpisodes(int idSerie, int seasonNum){
         episodeNodeInter = malloc(sizeof(episodesNode));
         episodeNodeInter->episode = getEpisode(atoi(rowSeason[0]));
         episodeNodeInter->next = episodeNodeStart;
-        episodeNodeStart = episodeNodeInter; 
+        episodeNodeStart = episodeNodeInter;
     }
     return episodeNodeStart;
 }
 
-seasonsNode * getSerieSeasonsList(int idSerie)
+seasonsNode *getSerieSeasonsList(int idSerie)
 {
     char request[294];
     char idSerieString[5];
@@ -82,9 +87,9 @@ seasonsNode * getSerieSeasonsList(int idSerie)
     sprintf(idSerieString, "%d", idSerie);
     sprintf(seasonNumString, "%d", seasonNum);
 
-    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season = \""),seasonNumString),"\" ORDER BY season DESC");
+    strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season = \""), seasonNumString), "\" ORDER BY season DESC");
     fetchAllRows(request, &resultSerieSeasons);
-    
+
     while ((rowSeasons = mysql_fetch_row(resultSerieSeasons)) != NULL)
     {
         //printf("test\n");
@@ -92,10 +97,10 @@ seasonsNode * getSerieSeasonsList(int idSerie)
         seasonNodeInter->episodes = getSerieSeasonEpisodes(idSerie, seasonNum);
         seasonNodeInter->number = seasonNum;
         seasonNodeInter->next = seasonNodeStart;
-        seasonNodeStart = seasonNodeInter; 
-        seasonNum ++;
+        seasonNodeStart = seasonNodeInter;
+        seasonNum++;
         sprintf(seasonNumString, "%d", seasonNum);
-        strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season = \""),seasonNumString),"\"");
+        strcat(strcat(strcat(strcat(strcpy(request, "SELECT id FROM episode WHERE id_serie = \""), idSerieString), "\" AND season = \""), seasonNumString), "\"");
         fetchAllRows(request, &resultSerieSeasons);
     }
     return seasonNodeStart;
@@ -144,7 +149,22 @@ seriesNode *getUserSeriesList(int idUser)
         seriesNodeInter->next = seriesNodeStart;
         seriesNodeStart = seriesNodeInter;
     }
-    
+
+    return seriesNodeStart;
+}
+
+seriesNode *getSeriesList(int idSerie)
+{
+    seriesNode *seriesNodeStart = NULL;
+    seriesNode *seriesNodeInter = NULL;
+
+    //printf("test\n");
+    seriesNodeInter = malloc(sizeof(seriesNode));
+    seriesNodeInter->serie = getSerieStruct(idSerie);
+    seriesNodeInter->seasons = getSerieSeasonsList(idSerie);
+    seriesNodeInter->next = seriesNodeStart;
+    seriesNodeStart = seriesNodeInter;
+
     return seriesNodeStart;
 }
 
@@ -292,23 +312,23 @@ uint8_t appDirectoryCheck(const char *appFolder)
     return 1;
 }
 
-
-
-void get_page(const char* url, const char* file_name){
+void get_page(const char *url, const char *file_name)
+{
     CURL *curl;
- 
+
     curl_global_init(CURL_GLOBAL_ALL);
     curl = curl_easy_init();
-    if(curl) {
-        FILE* file = fopen(file_name, "w");
+    if (curl)
+    {
+        FILE *file = fopen(file_name, "w");
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
- 
+
         //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "name=daniel&project=curl");
- 
+
         curl_easy_perform(curl);
         curl_easy_cleanup(curl);
- 
+
         fclose(file);
     }
     curl_global_cleanup();
@@ -349,7 +369,8 @@ void freeEpisodesNodeList(episodesNode **list)
         free(prev);
     }
 }
-uint16_t countSeriesList(episodesNode **series){
+uint16_t countSeriesList(episodesNode **series)
+{
     episodesNode *inter = *series;
     uint16_t seriesNumber = 0;
     while (inter != NULL)
@@ -360,27 +381,74 @@ uint16_t countSeriesList(episodesNode **series){
     return seriesNumber;
 }
 
-char * dayName(char * dayName){
-    if (strcmp(dayName,"Monday") == 0){
+char *dayName(char *dayName)
+{
+    if (strcmp(dayName, "Monday") == 0)
+    {
         return "Lundi";
     }
-    if (strcmp(dayName,"Tuesday") == 0){
+    if (strcmp(dayName, "Tuesday") == 0)
+    {
         return "Mardi";
     }
-    if (strcmp(dayName,"Wednesday") == 0){
+    if (strcmp(dayName, "Wednesday") == 0)
+    {
         return "Mercredi";
     }
-    if (strcmp(dayName,"Thursday") == 0){
+    if (strcmp(dayName, "Thursday") == 0)
+    {
         return "Jeudi";
     }
-    if (strcmp(dayName,"Friday") == 0){
+    if (strcmp(dayName, "Friday") == 0)
+    {
         return "Vendredi";
     }
-    if (strcmp(dayName,"Saturday") == 0){
+    if (strcmp(dayName, "Saturday") == 0)
+    {
         return "Samedi";
     }
-    if (strcmp(dayName,"Sunday") == 0){
+    if (strcmp(dayName, "Sunday") == 0)
+    {
         return "Dimanche";
     }
     return NULL;
+}
+
+episodesNode *getLastNotSeenEpisode(int idUser, int idSerie)
+{
+    seriesNode *series = getSeriesList(idSerie);
+    seasonsNode *seasons = series->seasons;
+    episodesNode **episodes = malloc(sizeof(episodesNode *));
+    char request[294];
+    char idUserString[5];
+    char idEpisodeString[5];
+    MYSQL_ROW rowEpisode;
+    MYSQL_RES *resultEpisode;
+    sprintf(idUserString, "%d", idUser);
+    episodesNode *episodeFalse = NULL;
+
+    while (seasons != NULL)
+    {
+
+        *episodes = seasons->episodes;
+        while ((*episodes) != NULL)
+        {
+            sprintf(idEpisodeString, "%d", (*episodes)->episode.id);
+            strcat(strcat(strcat(strcat(strcpy(request, "SELECT episode FROM episode_user WHERE episode = \""), idEpisodeString), "\" AND user = \""), idUserString), "\"");
+            fetchAllRows(request, &resultEpisode);
+            
+            while ((rowEpisode = mysql_fetch_row(resultEpisode)) == NULL)
+            {
+                return *episodes;
+            }
+
+            *episodes = (*episodes)->next;
+        }
+
+        seasons = seasons->next;
+    }
+    freeEpisodesNodeList(&series->seasons->episodes);
+    freeSeasonsNodeList(&series->seasons);
+    freeSeriesNodeList(&series);
+    return episodeFalse;
 }

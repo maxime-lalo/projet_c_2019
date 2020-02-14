@@ -17,46 +17,61 @@ int isConnected()
     }
     return 0;
 }
-GtkWidget * getTooSeeWindow(){
-    GtkWidget * seriesWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
+GtkWidget *getTooSeeWindow()
+{
+    GtkWidget *seriesWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
     free(userCred);
+    episodesNode * episodeToSee;
+    char seasonEpiosdeString [511];
     user.series = getUserSeriesList(user.id);
 
-    GtkWidget * seriesFlowBox = gtk_flow_box_new();
+    GtkWidget *seriesFlowBox = gtk_flow_box_new();
     gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(seriesFlowBox), 9);
 
     seriesNode *cursor;
     cursor = user.series;
-    
-    while(cursor != NULL){
-        // On crée le container qui va contenir toutes les infos sur la série
-        GtkBox * mainContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
 
-        // On crée les boutons 
-        GtkButton * showButton = GTK_BUTTON(gtk_button_new());
-        gtk_button_set_label(showButton, "Afficher");
+    while (cursor != NULL)
+    {
+        episodeToSee = getLastNotSeenEpisode(user.id, cursor->serie.id);
+        if (episodeToSee->episode.id != 0)
+        {
+            // On crée le container qui va contenir toutes les infos sur la série
+            GtkBox *mainContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
 
-        GtkButton * viewedButton = GTK_BUTTON(gtk_button_new());
-        gtk_button_set_label(viewedButton, "Marquer comme vu");
+            // On crée les boutons
+            GtkButton *showButton = GTK_BUTTON(gtk_button_new());
+            gtk_button_set_label(showButton, "Afficher");
 
-        // On crée un label qui contiendra le nom de la série
-        GtkLabel * serieNameLabel = GTK_LABEL(gtk_label_new(cursor->serie.name));
+            GtkButton *viewedButton = GTK_BUTTON(gtk_button_new());
+            gtk_button_set_label(viewedButton, "Marquer comme vu");
 
-        // On ajoute tout au container dans le bon ordre
-        gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(getImage(cursor->serie.imageLink)));
-        gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(serieNameLabel));
-        gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(showButton));
-        gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(viewedButton));
+            // On crée un label qui contiendra le nom de la série
+            GtkLabel *serieNameLabel = GTK_LABEL(gtk_label_new(cursor->serie.name));
 
-        // On link les signal aux boutons
-        g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(cursor->serie.id));
-        
-        // On ajoute le tout au flowbox
-        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(mainContainer),-1);
-        
+            GtkLabel *episodeNameLabel = GTK_LABEL(gtk_label_new(episodeToSee->episode.name));
+
+            sprintf(seasonEpiosdeString, "S%dE%d", episodeToSee->episode.season, episodeToSee->episode.number);
+            GtkLabel *seasonEpiosdeLabel = GTK_LABEL(gtk_label_new(seasonEpiosdeString));
+
+            // On ajoute tout au container dans le bon ordre
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(getImage(cursor->serie.imageLink)));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(serieNameLabel));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(episodeNameLabel));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(seasonEpiosdeLabel));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(showButton));
+            gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(viewedButton));
+
+            // On link les signal aux boutons
+            g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(cursor->serie.id));
+            g_signal_connect(G_OBJECT(viewedButton), "clicked", G_CALLBACK(changeStatusEpisode), GINT_TO_POINTER(episodeToSee->episode.id));
+            // On ajoute le tout au flowbox
+            gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox), GTK_WIDGET(mainContainer), -1);
+        }
+
         // On passe à la prochaine série contenu dans la liste chaînée
         cursor = cursor->next;
     }
@@ -64,7 +79,8 @@ GtkWidget * getTooSeeWindow(){
     gtk_container_add(GTK_CONTAINER(seriesWindow), GTK_WIDGET(seriesFlowBox));
     return seriesWindow;
 }
-GtkWidget * getAgendaWindow(){
+GtkWidget *getAgendaWindow()
+{
     GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
 
     const char *LOGIN_FILE = "./fms/user.bin";
@@ -73,70 +89,75 @@ GtkWidget * getAgendaWindow(){
     free(userCred);
 
     GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
-    GtkBox * containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
-    for (uint8_t i = 0; i < 7; i++){
-        GtkWidget * separator = GTK_WIDGET(gtk_separator_new(GTK_ORIENTATION_VERTICAL));
+    GtkBox *containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
+    for (uint8_t i = 0; i < 7; i++)
+    {
+        GtkWidget *separator = GTK_WIDGET(gtk_separator_new(GTK_ORIENTATION_VERTICAL));
 
         char request[500];
-        sprintf(request,"SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE_FORMAT(DATE(DATE_ADD(NOW(), INTERVAL %d DAY)),%s) as dateEu,DATE(DATE_ADD(NOW(), INTERVAL %d DAY)) as dateUs",i,i,"\"%d/%m/%Y\"",i);
+        sprintf(request, "SELECT DAYNAME(DATE(DATE_ADD(NOW(), INTERVAL %d DAY))) as name,DATE_FORMAT(DATE(DATE_ADD(NOW(), INTERVAL %d DAY)),%s) as dateEu,DATE(DATE_ADD(NOW(), INTERVAL %d DAY)) as dateUs", i, i, "\"%d/%m/%Y\"", i);
         MYSQL_ROW answer = fetchRow(request);
 
         char formatLabel[200];
-        sprintf(formatLabel,"%s | %s",dayName(answer[0]),answer[1]);
-        GtkLabel * labelDay = GTK_LABEL(gtk_label_new(formatLabel));
-        gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(labelDay));
+        sprintf(formatLabel, "%s | %s", dayName(answer[0]), answer[1]);
+        GtkLabel *labelDay = GTK_LABEL(gtk_label_new(formatLabel));
+        gtk_container_add(GTK_CONTAINER(agendaContainer), GTK_WIDGET(labelDay));
 
-        gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(separator));
+        gtk_container_add(GTK_CONTAINER(agendaContainer), GTK_WIDGET(separator));
 
         char requestEpisode[500];
-        sprintf(requestEpisode,"SELECT c.id,c.season,c.number,c.name,c.duration,c.id_serie,d.thumbnail,d.nom FROM user a INNER JOIN serie_user b ON a.id = b.id_user INNER JOIN episode c ON b.id_serie = c.id_serie INNER JOIN serie d ON b.id_serie = d.id WHERE air_date = '%s' AND a.id = %d",answer[2],user.id);
-        
+        sprintf(requestEpisode, "SELECT c.id,c.season,c.number,c.name,c.duration,c.id_serie,d.thumbnail,d.nom FROM user a INNER JOIN serie_user b ON a.id = b.id_user INNER JOIN episode c ON b.id_serie = c.id_serie INNER JOIN serie d ON b.id_serie = d.id WHERE air_date = '%s' AND a.id = %d", answer[2], user.id);
+
         MYSQL_RES *resultEpisode;
-        fetchAllRows(requestEpisode,&resultEpisode);
+        fetchAllRows(requestEpisode, &resultEpisode);
 
         MYSQL_ROW rowEpisode;
-        while ((rowEpisode = mysql_fetch_row(resultEpisode)) != NULL){
-            GtkBox * serieEpisodeContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL,10));
-            gtk_box_set_homogeneous(serieEpisodeContainer,TRUE);
-            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer),GTK_WIDGET(getImage(rowEpisode[6])));
+        while ((rowEpisode = mysql_fetch_row(resultEpisode)) != NULL)
+        {
+            GtkBox *serieEpisodeContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10));
+            gtk_box_set_homogeneous(serieEpisodeContainer, TRUE);
+            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer), GTK_WIDGET(getImage(rowEpisode[6])));
 
-            GtkLabel * serieName = GTK_LABEL(gtk_label_new(rowEpisode[7]));
-            GtkLabel * episodeName = GTK_LABEL(gtk_label_new(rowEpisode[3]));
+            GtkLabel *serieName = GTK_LABEL(gtk_label_new(rowEpisode[7]));
+            GtkLabel *episodeName = GTK_LABEL(gtk_label_new(rowEpisode[3]));
 
             char formattedString[200];
-            sprintf(formattedString,"S%sE%s",rowEpisode[1],rowEpisode[2]);
-            GtkLabel * seasonEpisodeNumber = GTK_LABEL(gtk_label_new(formattedString));
+            sprintf(formattedString, "S%sE%s", rowEpisode[1], rowEpisode[2]);
+            GtkLabel *seasonEpisodeNumber = GTK_LABEL(gtk_label_new(formattedString));
             /** 
              * Module pour les boutons
              */
             u_int8_t idEpisode = atoi(rowEpisode[0]);
             u_int8_t idSerie = atoi(rowEpisode[5]);
-            GtkBox * containerButtons = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
-            GtkButton * showButton = GTK_BUTTON(gtk_button_new());
-            gtk_button_set_label(showButton,"Afficher la série");
+            GtkBox *containerButtons = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
+            GtkButton *showButton = GTK_BUTTON(gtk_button_new());
+            gtk_button_set_label(showButton, "Afficher la série");
             g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(idSerie));
-            
-            GtkButton * markViewed = GTK_BUTTON(gtk_button_new());
-            if(isWatched(idEpisode)){
-                gtk_button_set_label(markViewed,"Marquer comme non vu");
-            }else{
-                gtk_button_set_label(markViewed,"Marquer comme vu");
-            }
-            g_signal_connect(markViewed,"clicked",G_CALLBACK(changeStatusEpisode),GINT_TO_POINTER(idEpisode));
 
-            gtk_container_add(GTK_CONTAINER(containerButtons),GTK_WIDGET(showButton));
-            gtk_container_add(GTK_CONTAINER(containerButtons),GTK_WIDGET(markViewed));
+            GtkButton *markViewed = GTK_BUTTON(gtk_button_new());
+            if (isWatched(idEpisode))
+            {
+                gtk_button_set_label(markViewed, "Marquer comme non vu");
+            }
+            else
+            {
+                gtk_button_set_label(markViewed, "Marquer comme vu");
+            }
+            g_signal_connect(markViewed, "clicked", G_CALLBACK(changeStatusEpisode), GINT_TO_POINTER(idEpisode));
+
+            gtk_container_add(GTK_CONTAINER(containerButtons), GTK_WIDGET(showButton));
+            gtk_container_add(GTK_CONTAINER(containerButtons), GTK_WIDGET(markViewed));
             /**
              * Fin module boutons
              */
 
-            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer),GTK_WIDGET(serieName));
-            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer),GTK_WIDGET(episodeName));
-            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer),GTK_WIDGET(seasonEpisodeNumber));
+            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer), GTK_WIDGET(serieName));
+            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer), GTK_WIDGET(episodeName));
+            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer), GTK_WIDGET(seasonEpisodeNumber));
 
-            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer),GTK_WIDGET(containerButtons));
+            gtk_container_add(GTK_CONTAINER(serieEpisodeContainer), GTK_WIDGET(containerButtons));
 
-            gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(serieEpisodeContainer));
+            gtk_container_add(GTK_CONTAINER(agendaContainer), GTK_WIDGET(serieEpisodeContainer));
         }
     }
     gtk_container_add(GTK_CONTAINER(agendaWindow), GTK_WIDGET(agendaContainer));
@@ -148,45 +169,49 @@ char *getEntryText(GtkWidget *entry)
     char *txt = (char *)gtk_entry_buffer_get_text(buffer);
 }
 
-void closeApp(GtkWidget *button, gpointer **closeAppArgs){
-    seriesNode * series = (seriesNode * ) closeAppArgs;
+void closeApp(GtkWidget *button, gpointer **closeAppArgs)
+{
+    seriesNode *series = (seriesNode *)closeAppArgs;
     freeEpisodesNodeList(&series->seasons->episodes);
     freeSeasonsNodeList(&series->seasons);
     freeSeriesNodeList(&series);
     gtk_main_quit();
 }
 
-void getSeriePage(GtkWidget *button, gpointer idSerie){
+void getSeriePage(GtkWidget *button, gpointer idSerie)
+{
     serie serie = getSerieStruct(GPOINTER_TO_INT(idSerie));
     GtkWidget *serieWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkWidget *serieContainer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(serieContainer), getImage(serie.imageLink));
 
-    seasonsNode * cursor = getSerieSeasonsList(GPOINTER_TO_INT(idSerie));
-    GtkComboBox * listSeasons = GTK_COMBO_BOX(gtk_combo_box_new());
-    while( cursor != NULL ){
+    seasonsNode *cursor = getSerieSeasonsList(GPOINTER_TO_INT(idSerie));
+    GtkComboBox *listSeasons = GTK_COMBO_BOX(gtk_combo_box_new());
+    while (cursor != NULL)
+    {
         char labelSeasonTxt[200];
-        sprintf(labelSeasonTxt,"Saison %d",cursor->number);
-        GtkLabel * labelSeason = GTK_LABEL(gtk_label_new(labelSeasonTxt));
+        sprintf(labelSeasonTxt, "Saison %d", cursor->number);
+        GtkLabel *labelSeason = GTK_LABEL(gtk_label_new(labelSeasonTxt));
         //gtk_list_box_insert(listSeasons,GTK_WIDGET(labelSeason),-1);
         cursor = cursor->next;
     }
-    gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(listSeasons));
+    gtk_container_add(GTK_CONTAINER(serieContainer), GTK_WIDGET(listSeasons));
     gtk_window_set_default_size(GTK_WINDOW(serieWindow), 700, 289);
-    gtk_window_set_title(GTK_WINDOW(serieWindow), (char *) serie.name);
+    gtk_window_set_title(GTK_WINDOW(serieWindow), (char *)serie.name);
     gtk_window_set_position(GTK_WINDOW(serieWindow), GTK_WIN_POS_CENTER);
     g_signal_connect(G_OBJECT(serieWindow), "destroy", G_CALLBACK(gtk_widget_hide_on_delete), serieWindow);
     gtk_container_add(GTK_CONTAINER(serieWindow), serieContainer);
     gtk_widget_show_all(serieWindow);
 }
 
-GtkWidget * getMainPage(){
+GtkWidget *getMainPage()
+{
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
     free(userCred);
     user.series = getUserSeriesList(user.id);
-    
+
     //Window principale + Box princiale (dans Window)
     GtkWidget *mainWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -194,7 +219,6 @@ GtkWidget * getMainPage(){
     //Stack + Stack Switcher (permet de Switch entre les childs de Stack)
     GtkWidget *stack = gtk_stack_new();
     GtkStackSwitcher *switcher = GTK_STACK_SWITCHER(gtk_stack_switcher_new());
-
 
     /**
      * Début recherche
@@ -206,7 +230,6 @@ GtkWidget * getMainPage(){
     /**
      * Fin recherche
      */
-
 
     //Ajout/Création de boutons pour les différents stacks
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getTooSeeWindow()), "series", "A voir");
@@ -230,8 +253,8 @@ GtkWidget * getMainPage(){
 
     //Ajout du mainContainer à la mainWindow
     gtk_container_add(GTK_CONTAINER(mainWindow), mainContainer);
-    gtk_window_set_icon_from_file(GTK_WINDOW(mainWindow),"logo.png",NULL);
-    gtk_window_maximize (GTK_WINDOW(mainWindow));
+    gtk_window_set_icon_from_file(GTK_WINDOW(mainWindow), "logo.png", NULL);
+    gtk_window_maximize(GTK_WINDOW(mainWindow));
     return mainWindow;
 }
 
@@ -313,55 +336,66 @@ GtkWidget *getLoginPage()
     return loginWindow;
 }
 
-GtkWidget * getImage(char * imageLink){
-    GtkWidget * imageSerie = gtk_image_new();
+GtkWidget *getImage(char *imageLink)
+{
+    GtkWidget *imageSerie = gtk_image_new();
     char imageLinkInDirectory[200];
-    sprintf(imageLinkInDirectory,"./fms/images/%s",imageLink);
+    sprintf(imageLinkInDirectory, "./fms/images/%s", imageLink);
 
-    FILE * testImg;
-    testImg = fopen(imageLink,"r");
-    if(testImg){
+    FILE *testImg;
+    testImg = fopen(imageLink, "r");
+    if (testImg)
+    {
         fclose(testImg);
-    }else{
+    }
+    else
+    {
         char imageOnlineLink[300];
-        sprintf(imageOnlineLink,"https://eplp.fr/images/%s",imageLink);
-        get_page(imageOnlineLink,imageLinkInDirectory);
+        sprintf(imageOnlineLink, "https://eplp.fr/images/%s", imageLink);
+        get_page(imageOnlineLink, imageLinkInDirectory);
     }
     gtk_image_set_from_file(GTK_IMAGE(imageSerie), imageLinkInDirectory);
     return imageSerie;
 }
 
-u_int8_t isWatched(u_int8_t idEpisode){
+u_int8_t isWatched(u_int8_t idEpisode)
+{
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
     free(userCred);
 
     char request[255];
-    sprintf(request,"SELECT * FROM episode_user WHERE episode = %d AND user = %d",idEpisode,user.id);
+    sprintf(request, "SELECT * FROM episode_user WHERE episode = %d AND user = %d", idEpisode, user.id);
     MYSQL_ROW row = fetchRow(request);
 
-    if (row){
+    if (row)
+    {
         return 1;
-    }else{
+    }
+    else
+    {
         return 0;
     }
-   
 }
 
-void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode){
+void changeStatusEpisode(GtkWidget *widget, gpointer idEpisode)
+{
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
     free(userCred);
 
     char request[250];
-    if(isWatched(GPOINTER_TO_INT(idEpisode))){
-        sprintf(request,"DELETE FROM episode_user WHERE episode = %d AND user = %d",GPOINTER_TO_INT(idEpisode),user.id);
-        gtk_button_set_label(GTK_BUTTON(widget),"Marquer comme vu");
-    }else{
-        sprintf(request,"INSERT INTO episode_user (episode,user) VALUES (%d,%d)",GPOINTER_TO_INT(idEpisode),user.id);
-        gtk_button_set_label(GTK_BUTTON(widget),"Marquer comme non vu");
+    if (isWatched(GPOINTER_TO_INT(idEpisode)))
+    {
+        sprintf(request, "DELETE FROM episode_user WHERE episode = %d AND user = %d", GPOINTER_TO_INT(idEpisode), user.id);
+        gtk_button_set_label(GTK_BUTTON(widget), "Marquer comme vu");
+    }
+    else
+    {
+        sprintf(request, "INSERT INTO episode_user (episode,user) VALUES (%d,%d)", GPOINTER_TO_INT(idEpisode), user.id);
+        gtk_button_set_label(GTK_BUTTON(widget), "Marquer comme non vu");
     }
     gtk_widget_show(GTK_WIDGET(widget));
     sqlExecute(request);

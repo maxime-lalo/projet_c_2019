@@ -37,7 +37,7 @@ GtkWidget *getTooSeeWindow()
     while (cursor != NULL)
     {
         episodeToSee = getLastNotSeenEpisode(user.id, cursor->serie.id);
-        if (episodeToSee->episode.id != 0)
+        if (episodeToSee != NULL)
         {
             // On crée le container qui va contenir toutes les infos sur la série
             GtkBox *mainContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
@@ -169,12 +169,8 @@ char *getEntryText(GtkWidget *entry)
     char *txt = (char *)gtk_entry_buffer_get_text(buffer);
 }
 
-void closeApp(GtkWidget *button, gpointer **closeAppArgs)
+void closeApp(GtkWidget *button)
 {
-    seriesNode *series = (seriesNode *)closeAppArgs;
-    freeEpisodesNodeList(&series->seasons->episodes);
-    freeSeasonsNodeList(&series->seasons);
-    freeSeriesNodeList(&series);
     gtk_main_quit();
 }
 
@@ -245,7 +241,7 @@ GtkWidget *getMainPage()
     //Configuration de base de la Window principale
     gtk_window_set_title(GTK_WINDOW(mainWindow), user.name);
     gtk_window_set_position(GTK_WINDOW(mainWindow), GTK_WIN_POS_CENTER);
-    g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(closeApp), (gpointer *)&(user.series->serie));
+    g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(closeApp), NULL);
 
     //Ajout du Stack Switcher et Stack au mainContainer
     gtk_box_pack_start(GTK_BOX(mainContainer), GTK_WIDGET(switcher), FALSE, FALSE, 10);

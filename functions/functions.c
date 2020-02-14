@@ -425,7 +425,6 @@ episodesNode *getLastNotSeenEpisode(int idUser, int idSerie)
     MYSQL_ROW rowEpisode;
     MYSQL_RES *resultEpisode;
     sprintf(idUserString, "%d", idUser);
-    episodesNode *episodeFalse = NULL;
 
     while (seasons != NULL)
     {
@@ -447,8 +446,5 @@ episodesNode *getLastNotSeenEpisode(int idUser, int idSerie)
 
         seasons = seasons->next;
     }
-    freeEpisodesNodeList(&series->seasons->episodes);
-    freeSeasonsNodeList(&series->seasons);
-    freeSeriesNodeList(&series);
-    return episodeFalse;
+    return NULL;
 }

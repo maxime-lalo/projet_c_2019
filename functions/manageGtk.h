@@ -14,7 +14,7 @@ u_int8_t isWatched(u_int8_t idEpisode);
 u_int8_t isFollowed(u_int8_t idSerie);
 void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode);
 void changeStatusSerie(GtkWidget * widget,gpointer idSerie);
-GtkWidget * getAgendaWindow();
+GtkWidget * getMySeriesWindow();
 GtkWidget * getTooSeeWindow();
 GtkWidget * getSearchWindow();
 void showSearchedSeries(GtkWidget * widget,argsSearchStruct * arg);

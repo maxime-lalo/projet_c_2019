@@ -35,6 +35,8 @@ void showSearchedSeries(GtkWidget * widget,argsSearchStruct * arg){
     g_list_free(children);
 
     while ((row = mysql_fetch_row(result)) != NULL){
+        uint8_t idSerie = atoi(row[0]);
+
         GtkBox * serieContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
         gtk_flow_box_insert(GTK_FLOW_BOX(arg->container),GTK_WIDGET(serieContainer),-1);
 
@@ -42,13 +44,19 @@ void showSearchedSeries(GtkWidget * widget,argsSearchStruct * arg){
         gtk_button_set_label(showSerie,"Afficher la série");
 
         GtkButton * followSerie = GTK_BUTTON(gtk_button_new());
-        gtk_button_set_label(followSerie,"Suivre la série");
+
+        if (isFollowed(idSerie)){
+            gtk_button_set_label(followSerie,"Ne plus suivre");
+        }else{
+            gtk_button_set_label(followSerie,"Suivre");
+        }
 
         gtk_container_add(GTK_CONTAINER(serieContainer),getImage(row[2]));
         gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(showSerie));
         gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(followSerie));
-        uint8_t idSerie = atoi(row[0]);
+        
         g_signal_connect(showSerie,"clicked",G_CALLBACK(getSeriePage),GINT_TO_POINTER(idSerie));
+        g_signal_connect(followSerie,"clicked",G_CALLBACK(changeStatusSerie),GINT_TO_POINTER(idSerie));
     }
     gtk_widget_show_all(arg->container);
 }
@@ -404,6 +412,24 @@ u_int8_t isWatched(u_int8_t idEpisode){
    
 }
 
+u_int8_t isFollowed(u_int8_t idSerie){
+    const char *LOGIN_FILE = "./fms/user.bin";
+    char **userCred = getUserCred(LOGIN_FILE);
+    user user = createUserStruct(userCred[0], userCred[1]);
+    free(userCred);
+
+    char request[255];
+    sprintf(request,"SELECT * FROM serie_user WHERE id_serie = %d AND id_user = %d",idSerie,user.id);
+    MYSQL_ROW row = fetchRow(request);
+
+    if (row){
+        return 1;
+    }else{
+        return 0;
+    }
+   
+}
+
 void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode){
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
@@ -417,6 +443,24 @@ void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode){
     }else{
         sprintf(request,"INSERT INTO episode_user (episode,user) VALUES (%d,%d)",GPOINTER_TO_INT(idEpisode),user.id);
         gtk_button_set_label(GTK_BUTTON(widget),"Marquer comme non vu");
+    }
+    gtk_widget_show(GTK_WIDGET(widget));
+    sqlExecute(request);
+}
+
+void changeStatusSerie(GtkWidget * widget,gpointer idSerie){
+    const char *LOGIN_FILE = "./fms/user.bin";
+    char **userCred = getUserCred(LOGIN_FILE);
+    user user = createUserStruct(userCred[0], userCred[1]);
+    free(userCred);
+
+    char request[250];
+    if(isFollowed(GPOINTER_TO_INT(idSerie))){
+        sprintf(request,"DELETE FROM serie_user WHERE id_serie = %d AND id_user = %d",GPOINTER_TO_INT(idSerie),user.id);
+        gtk_button_set_label(GTK_BUTTON(widget),"Suivre");
+    }else{
+        sprintf(request,"INSERT INTO serie_user (id_serie,id_user) VALUES (%d,%d)",GPOINTER_TO_INT(idSerie),user.id);
+        gtk_button_set_label(GTK_BUTTON(widget),"Ne plus suivre");
     }
     gtk_widget_show(GTK_WIDGET(widget));
     sqlExecute(request);

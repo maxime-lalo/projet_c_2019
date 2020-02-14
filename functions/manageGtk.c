@@ -17,86 +17,62 @@ int isConnected()
     }
     return 0;
 }
-
-char *getEntryText(GtkWidget *entry)
-{
-    GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(entry));
-    char *txt = (char *)gtk_entry_buffer_get_text(buffer);
-}
-
-void closeApp(GtkWidget *button, gpointer **closeAppArgs){
-    seriesNode * series = (seriesNode * ) closeAppArgs;
-    freeEpisodesNodeList(&series->seasons->episodes);
-    freeSeasonsNodeList(&series->seasons);
-    freeSeriesNodeList(&series);
-    gtk_main_quit();
-}
-
-void getSeriePage(GtkWidget *button, gpointer idSerie){
-    serie serie = getSerieStruct(GPOINTER_TO_INT(idSerie));
-    GtkWidget *serieWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    GtkWidget *serieContainer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_container_add(GTK_CONTAINER(serieContainer), getImage(serie.imageLink));
-
-    seasonsNode * cursor = getSerieSeasonsList(GPOINTER_TO_INT(idSerie));
-    GtkListBox * listSeasons = GTK_LIST_BOX(gtk_list_box_new());
-    while( cursor != NULL ){
-        char labelSeasonTxt[200];
-        sprintf(labelSeasonTxt,"Saison %d",cursor->number);
-        GtkLabel * labelSeason = GTK_LABEL(gtk_label_new(labelSeasonTxt));
-        gtk_list_box_insert(listSeasons,GTK_WIDGET(labelSeason),-1);
-        cursor = cursor->next;
-    }
-    gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(listSeasons));
-    gtk_window_set_default_size(GTK_WINDOW(serieWindow), 700, 289);
-    gtk_window_set_title(GTK_WINDOW(serieWindow), (char *) serie.name);
-    gtk_window_set_position(GTK_WINDOW(serieWindow), GTK_WIN_POS_CENTER);
-    g_signal_connect(G_OBJECT(serieWindow), "destroy", G_CALLBACK(gtk_widget_hide_on_delete), serieWindow);
-    gtk_container_add(GTK_CONTAINER(serieWindow), serieContainer);
-    gtk_widget_show_all(serieWindow);
-}
-
-GtkWidget *getMainPage()
-{
+GtkWidget * getTooSeeWindow(){
+    GtkWidget * seriesWindow = GTK_WIDGET(gtk_scrolled_window_new(NULL, NULL));
     const char *LOGIN_FILE = "./fms/user.bin";
     char **userCred = getUserCred(LOGIN_FILE);
     user user = createUserStruct(userCred[0], userCred[1]);
     free(userCred);
     user.series = getUserSeriesList(user.id);
-    
-    //printf("test\n");
-    //uint16_t userSeriesNumber = countSeriesList((episodesNode ** )&user.series);
-    //Window principale + Box princiale (dans Window)
-    GtkWidget *mainWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-    //Stack + Stack Switcher (permet de Switch entre les childs de Stack)
-    GtkWidget *stack = gtk_stack_new();
-    GtkStackSwitcher *switcher = GTK_STACK_SWITCHER(gtk_stack_switcher_new());
-
-    //Agenda
-    GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
-
-    //Series
-    GtkWidget *seriesWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkWidget *seriesFlowBox = gtk_flow_box_new();
+    GtkWidget * seriesFlowBox = gtk_flow_box_new();
     gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(seriesFlowBox), 9);
 
-    //Toutes Series + Recherche
-    GtkWidget *allSeriesWindow = gtk_scrolled_window_new(NULL, NULL);
-    GtkWidget *allSeriesFlowBox = gtk_flow_box_new();
-    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(allSeriesFlowBox), 6);
-
+    seriesNode *cursor;
+    cursor = user.series;
     
+    while(cursor != NULL){
+        // On crée le container qui va contenir toutes les infos sur la série
+        GtkBox * mainContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
 
-    //Boutons
-    GtkWidget *series[500];
+        // On crée les boutons 
+        GtkButton * showButton = GTK_BUTTON(gtk_button_new());
+        gtk_button_set_label(showButton, "Afficher");
 
-    //Images pour les boutons représentants chacun une série
-    GtkWidget *image[500];
+        GtkButton * viewedButton = GTK_BUTTON(gtk_button_new());
+        gtk_button_set_label(viewedButton, "Marquer comme vu");
 
-    // Gestion de l'agenda
+        // On crée un label qui contiendra le nom de la série
+        GtkLabel * serieNameLabel = GTK_LABEL(gtk_label_new(cursor->serie.name));
+
+        // On ajoute tout au container dans le bon ordre
+        gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(getImage(cursor->serie.imageLink)));
+        gtk_container_add(GTK_CONTAINER(mainContainer),GTK_WIDGET(serieNameLabel));
+        gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(showButton));
+        gtk_container_add(GTK_CONTAINER(mainContainer), GTK_WIDGET(viewedButton));
+
+        // On link les signal aux boutons
+        g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(cursor->serie.id));
+        
+        // On ajoute le tout au flowbox
+        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(mainContainer),-1);
+        
+        // On passe à la prochaine série contenu dans la liste chaînée
+        cursor = cursor->next;
+    }
+    // On ajoute la flowbox à la window puis on return la window
+    gtk_container_add(GTK_CONTAINER(seriesWindow), GTK_WIDGET(seriesFlowBox));
+    return seriesWindow;
+}
+GtkWidget * getAgendaWindow(){
+    GtkWidget *agendaWindow = gtk_scrolled_window_new(NULL, NULL);
+
+    const char *LOGIN_FILE = "./fms/user.bin";
+    char **userCred = getUserCred(LOGIN_FILE);
+    user user = createUserStruct(userCred[0], userCred[1]);
+    free(userCred);
+
+    GtkBox *agendaContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 10));
     GtkBox * containerAgenda = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
     for (uint8_t i = 0; i < 7; i++){
         GtkWidget * separator = GTK_WIDGET(gtk_separator_new(GTK_ORIENTATION_VERTICAL));
@@ -163,69 +139,78 @@ GtkWidget *getMainPage()
             gtk_container_add(GTK_CONTAINER(agendaContainer),GTK_WIDGET(serieEpisodeContainer));
         }
     }
-    gtk_container_add(GTK_CONTAINER(agendaContainer), GTK_WIDGET(containerAgenda));
+    gtk_container_add(GTK_CONTAINER(agendaWindow), GTK_WIDGET(agendaContainer));
+    return agendaWindow;
+}
+char *getEntryText(GtkWidget *entry)
+{
+    GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(entry));
+    char *txt = (char *)gtk_entry_buffer_get_text(buffer);
+}
 
-    //Labels tests
-    GtkWidget *label2 = gtk_label_new("Toutes les series");
-    gtk_flow_box_insert(GTK_FLOW_BOX(allSeriesFlowBox), label2, -1);
+void closeApp(GtkWidget *button, gpointer **closeAppArgs){
+    seriesNode * series = (seriesNode * ) closeAppArgs;
+    freeEpisodesNodeList(&series->seasons->episodes);
+    freeSeasonsNodeList(&series->seasons);
+    freeSeriesNodeList(&series);
+    gtk_main_quit();
+}
 
-    //Créations des 100 images et 100 boutons (tests)
-    seriesNode *cursor;
-    cursor = user.series;
-    uint8_t i = 0;
+void getSeriePage(GtkWidget *button, gpointer idSerie){
+    serie serie = getSerieStruct(GPOINTER_TO_INT(idSerie));
+    GtkWidget *serieWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    GtkWidget *serieContainer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add(GTK_CONTAINER(serieContainer), getImage(serie.imageLink));
 
-    // On remplit l'onglet séries à voir
-    while(cursor != NULL){
-        // On crée l'image de la série
-        image[i] = gtk_image_new();
-        char imageDirectoryLink[300];
-        sprintf(imageDirectoryLink, "./fms/images/%s", cursor->serie.imageLink);
-        FILE *testImg;
-        testImg = fopen(imageDirectoryLink, "r");
-        if (testImg)
-        {
-            fclose(testImg);
-        }
-        else
-        {
-            char imageOnlineLink[300];
-            sprintf(imageOnlineLink, "https://eplp.fr/images/%s", cursor->serie.imageLink);
-            get_page(imageOnlineLink, imageDirectoryLink);
-        }
-        gtk_image_set_from_file(GTK_IMAGE(image[i]), imageDirectoryLink);
-
-        //Création d'un bouton plus ajout à la FlowBox seriesFlowBox
-        series[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-
-        GtkBox * subContainer = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL,10));
-        GtkButton * showButton = GTK_BUTTON(gtk_button_new());
-        GtkButton * viewedButton = GTK_BUTTON(gtk_button_new());
-        GtkLabel * serieNameLabel = GTK_LABEL(gtk_label_new(cursor->serie.name));
-
-        gtk_button_set_label(showButton, "Afficher");
-        gtk_button_set_label(viewedButton, "Marquer comme vu");
-
-        gtk_container_add(GTK_CONTAINER(subContainer), GTK_WIDGET(showButton));
-        gtk_container_add(GTK_CONTAINER(subContainer), GTK_WIDGET(viewedButton));
-
-        g_signal_connect(G_OBJECT(showButton), "clicked", G_CALLBACK(getSeriePage), GINT_TO_POINTER(cursor->serie.id));
-        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(image[i]));
-        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(serieNameLabel));
-        gtk_container_add(GTK_CONTAINER(series[i]),GTK_WIDGET(subContainer));
-        
-        gtk_flow_box_insert(GTK_FLOW_BOX(seriesFlowBox),GTK_WIDGET(series[i]),-1);
-        i++;
+    seasonsNode * cursor = getSerieSeasonsList(GPOINTER_TO_INT(idSerie));
+    GtkComboBox * listSeasons = GTK_COMBO_BOX(gtk_combo_box_new());
+    while( cursor != NULL ){
+        char labelSeasonTxt[200];
+        sprintf(labelSeasonTxt,"Saison %d",cursor->number);
+        GtkLabel * labelSeason = GTK_LABEL(gtk_label_new(labelSeasonTxt));
+        //gtk_list_box_insert(listSeasons,GTK_WIDGET(labelSeason),-1);
         cursor = cursor->next;
     }
+    gtk_container_add(GTK_CONTAINER(serieContainer),GTK_WIDGET(listSeasons));
+    gtk_window_set_default_size(GTK_WINDOW(serieWindow), 700, 289);
+    gtk_window_set_title(GTK_WINDOW(serieWindow), (char *) serie.name);
+    gtk_window_set_position(GTK_WINDOW(serieWindow), GTK_WIN_POS_CENTER);
+    g_signal_connect(G_OBJECT(serieWindow), "destroy", G_CALLBACK(gtk_widget_hide_on_delete), serieWindow);
+    gtk_container_add(GTK_CONTAINER(serieWindow), serieContainer);
+    gtk_widget_show_all(serieWindow);
+}
 
-    //Ajout des FlowBox dans leurs Window respectives
-    gtk_container_add(GTK_CONTAINER(seriesWindow), seriesFlowBox);
+GtkWidget * getMainPage(){
+    const char *LOGIN_FILE = "./fms/user.bin";
+    char **userCred = getUserCred(LOGIN_FILE);
+    user user = createUserStruct(userCred[0], userCred[1]);
+    free(userCred);
+    user.series = getUserSeriesList(user.id);
+    
+    //Window principale + Box princiale (dans Window)
+    GtkWidget *mainWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    GtkWidget *mainContainer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
+    //Stack + Stack Switcher (permet de Switch entre les childs de Stack)
+    GtkWidget *stack = gtk_stack_new();
+    GtkStackSwitcher *switcher = GTK_STACK_SWITCHER(gtk_stack_switcher_new());
+
+
+    /**
+     * Début recherche
+     */
+    GtkWidget *allSeriesWindow = gtk_scrolled_window_new(NULL, NULL);
+    GtkWidget *allSeriesFlowBox = gtk_flow_box_new();
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(allSeriesFlowBox), 6);
     gtk_container_add(GTK_CONTAINER(allSeriesWindow), allSeriesFlowBox);
-    gtk_container_add(GTK_CONTAINER(agendaWindow), GTK_WIDGET(agendaContainer));
+    /**
+     * Fin recherche
+     */
+
 
     //Ajout/Création de boutons pour les différents stacks
-    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(seriesWindow), "series", "A voir");
-    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(agendaWindow), "agenda", "Agenda");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getTooSeeWindow()), "series", "A voir");
+    gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(getAgendaWindow()), "agenda", "Agenda");
     gtk_stack_add_titled(GTK_STACK(stack), GTK_WIDGET(allSeriesWindow), "allSeries", "Rechercher");
 
     //Alignements des boutons Stack Switcher
@@ -235,7 +220,6 @@ GtkWidget *getMainPage()
     gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
 
     //Configuration de base de la Window principale
-    gtk_window_set_default_size(GTK_WINDOW(mainWindow), 700, 500);
     gtk_window_set_title(GTK_WINDOW(mainWindow), user.name);
     gtk_window_set_position(GTK_WINDOW(mainWindow), GTK_WIN_POS_CENTER);
     g_signal_connect(G_OBJECT(mainWindow), "destroy", G_CALLBACK(closeApp), (gpointer *)&(user.series->serie));

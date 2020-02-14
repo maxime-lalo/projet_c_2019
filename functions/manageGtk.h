@@ -12,3 +12,5 @@ void closeWindow(GtkWidget * widget,GtkWidget * window);
 GtkWidget * getImage(char * imageLink);
 u_int8_t isWatched(u_int8_t idEpisode);
 void changeStatusEpisode(GtkWidget * widget,gpointer idEpisode);
+GtkWidget * getAgendaWindow();
+GtkWidget * getTooSeeWindow();

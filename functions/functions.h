@@ -18,3 +18,5 @@ void freeSeasonsNodeList(seasonsNode **list);
 void freeEpisodesNodeList(episodesNode **list);
 uint16_t countSeriesList(episodesNode **series);
 void get_page(const char* url, const char* file_name);
+episodesNode *getLastNotSeenEpisode(int idUser, int idSerie);
+seriesNode *getSeriesList(int idSerie);

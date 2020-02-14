@@ -3,7 +3,7 @@
 
 #include <mysql.h>
 #include <stdio.h>
-
+#include <gtk/gtk.h>
 //Episodes
 typedef struct episode
 {
@@ -72,6 +72,11 @@ typedef struct user
     char email[256];
     seriesNode *series;
 } user;
+
+typedef struct argsSearchStruct{
+    GtkWidget * container;
+    GtkWidget * entry;
+}argsSearchStruct;
 
 MYSQL *initBdd();
 MYSQL_ROW fetchRow(char *request);

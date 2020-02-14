@@ -384,3 +384,49 @@ char * dayName(char * dayName){
     }
     return NULL;
 }
+episodesNode *getLastNotSeenEpisode(int idUser, int idSerie){
+    seriesNode *series = getSeriesList(idSerie);
+    seasonsNode *seasons = series->seasons;
+    episodesNode **episodes = malloc(sizeof(episodesNode *));
+    char request[294];
+    char idUserString[5];
+    char idEpisodeString[5];
+    MYSQL_ROW rowEpisode;
+    MYSQL_RES *resultEpisode;
+    sprintf(idUserString, "%d", idUser);
+    
+    while (seasons != NULL)
+    {
+        *episodes = seasons->episodes;
+        while ((*episodes) != NULL)
+        {
+            sprintf(idEpisodeString, "%d", (*episodes)->episode.id);
+            strcat(strcat(strcat(strcat(strcpy(request, "SELECT episode FROM episode_user WHERE episode = \""), idEpisodeString), "\" AND user = \""), idUserString), "\"");
+            fetchAllRows(request, &resultEpisode);
+            
+            while ((rowEpisode = mysql_fetch_row(resultEpisode)) == NULL)
+            {
+                return *episodes;
+            }
+
+            *episodes = (*episodes)->next;
+        }
+
+        seasons = seasons->next;
+    }
+    return NULL;
+}
+
+seriesNode *getSeriesList(int idSerie){
+    seriesNode *seriesNodeStart = NULL;
+    seriesNode *seriesNodeInter = NULL;
+
+    //printf("test\n");
+    seriesNodeInter = malloc(sizeof(seriesNode));
+    seriesNodeInter->serie = getSerieStruct(idSerie);
+    seriesNodeInter->seasons = getSerieSeasonsList(idSerie);
+    seriesNodeInter->next = seriesNodeStart;
+    seriesNodeStart = seriesNodeInter;
+
+    return seriesNodeStart;
+}
